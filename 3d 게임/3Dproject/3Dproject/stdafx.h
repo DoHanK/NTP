@@ -41,6 +41,12 @@ using namespace std;
 #include <dxgidebug.h>
 #endif
 
+// 서버 헤더파일
+#include <thread>
+#include <WinSock2.h>
+#include <MSWSock.h>
+#include <ws2tcpip.h>
+#pragma comment(lib, "ws2_32.lib")
 
 
 /// STL 관련 헤더파일들

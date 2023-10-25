@@ -1,8 +1,11 @@
 #include "stdafx.h"
 #include "CGameFramework.h"	
 #include "CMeshManager.h"
+#include "/넷겜플/NTP/Server/protocol.h"
 
+#define _SERVER_TEST
 
+SOCKET clientSocket;
 
 CGameFrameWork::CGameFrameWork() {
 
@@ -474,77 +477,125 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 
 		long x;
 		long y;
-		
+
 
 		x = LOWORD(lParam);
 		y = HIWORD(lParam);
 
-			// if UiManager Exist....
-			if (m_pUIManager) {
+		// if UiManager Exist....
+		if (m_pUIManager) {
 
-				// Check Rect Bounding
-				for (const auto p : m_pUIManager->FunctionList) {
-					
-					//위아래 체크
-					if (p.first->top< y && y < p.first->bottom) {
-						if (p.first->left < x && x < p.first->right) {
+			// Check Rect Bounding
+			for (const auto p : m_pUIManager->FunctionList) {
 
-							switch (p.first->purpose) {
-								//초기 스테이지 시작 화면
-							case MULTI_BUTTON:
-								m_GameState = MultiStage;
-							case START_BUTTON:
-								m_GameState = PlayStage;
-								break;
-							case EXIT_BUTTON:
-								exit(0);
-								break;
-							case CUSTOM_BUTTON:
-								m_GameState = CustomStage;
-								break;
-							case RED_COLOR_BUTTON:
-								m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankRed.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementRed.dds"));
-								break;
-							case BLUE_COLOR_BUTTON:
-								m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankBlue.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementBlue.dds"));
-								break;
-							case GREEN_COLOR_BUTTON:
-								m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankGreen.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementGreen.dds"));
-								break;
-							case YELLOW_COLOR_BUTTON:
+				//위아래 체크
+				if (p.first->top < y && y < p.first->bottom) {
+					if (p.first->left < x && x < p.first->right) {
 
-								m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankYellow.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementYellow.dds"));
-								break;
+						switch (p.first->purpose) {
+							//초기 스테이지 시작 화면
+						case MULTI_BUTTON:
+							m_GameState = MultiStage;
+						case START_BUTTON:
+							m_GameState = PlayStage;
+							break;
+						case EXIT_BUTTON:
+							// 소켓 리소스 반환
+							::closesocket(clientSocket);
+							// 윈속 종료
+							::WSACleanup();
+							exit(0);
+							break;
+						case CUSTOM_BUTTON:
+							m_GameState = CustomStage;
+							break;
+						case RED_COLOR_BUTTON:
+							m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankRed.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementRed.dds"));
+							break;
+						case BLUE_COLOR_BUTTON:
+							m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankBlue.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementBlue.dds"));
+							break;
+						case GREEN_COLOR_BUTTON:
+							m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankGreen.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementGreen.dds"));
+							break;
+						case YELLOW_COLOR_BUTTON:
 
-							}
+							m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankYellow.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementYellow.dds"));
+							break;
+
 						}
-
 					}
 
 				}
-				
+
 			}
 
-			if (m_PreGameState != m_GameState) {
+		}
 
-				switch (m_GameState) {
-				case PlayStage:
-					m_pUIManager->DeleteAllRect();
-					m_pScoreManager->DeleteAllRect();
-					MakePlayButton();
-					break;
-				case CustomStage:
-					m_pUIManager->DeleteAllRect();
-					m_pScoreManager->DeleteAllRect();
-					MakeCustomButton();
-					break;
-				case InitStage:
-					break;
-				case MultiStage: // 여기에서 윈소켓 Init과 Connect 해결
-					break;
+		if (m_PreGameState != m_GameState) {
+
+			switch (m_GameState) {
+			case PlayStage:
+				m_pUIManager->DeleteAllRect();
+				m_pScoreManager->DeleteAllRect();
+				MakePlayButton();
+				break;
+			case CustomStage:
+				m_pUIManager->DeleteAllRect();
+				m_pScoreManager->DeleteAllRect();
+				MakeCustomButton();
+				break;
+			case InitStage:
+				break;
+			case MultiStage: // 여기에서 윈소켓 Init과 Connect 해결
+
+				WSAData wsaData;
+				if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+					return 0;
+
+				clientSocket = ::socket(AF_INET, SOCK_STREAM, 0);
+				if (clientSocket == INVALID_SOCKET)
+				{
+					int errCode = ::WSAGetLastError();
+#ifdef _SERVER_TEST
+					TCHAR pstrDebug[256] = { 0 };
+					_stprintf_s(pstrDebug, 256, _T("Socket ErrorCode : %d\n"), errCode);
+					OutputDebugString(pstrDebug);
+#endif
+					return 0;
 				}
-				m_PreGameState = m_GameState;
+
+				SOCKADDR_IN serverAddr; // Ipv4;
+				::memset(&serverAddr, 0, sizeof(serverAddr));
+				serverAddr.sin_family = AF_INET;
+
+				::inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr);
+				serverAddr.sin_port = ::htons(PORT_NUM);    // 80 : HTTP
+
+
+
+				if (::connect(clientSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
+				{
+					int errCode = ::WSAGetLastError();
+
+#ifdef _SERVER_TEST
+					TCHAR pstrDebug[256] = { 0 };
+					_stprintf_s(pstrDebug, 256, _T("Connect ErrorCode : %d\n"), errCode);
+					OutputDebugString(pstrDebug);
+#endif
+					return 0;
+				}
+				// --------------------------------
+				// 연결 성공! 이제부터 데이터 송수신 가능!
+#ifdef _SERVER_TEST
+				TCHAR pstrDebug[256] = { 0 };
+				_stprintf_s(pstrDebug, 256, _T("Connected To Server!"));
+				OutputDebugString(pstrDebug);
+#endif
+				break;
 			}
+			m_PreGameState = m_GameState;
+		}
 
 	}
 
