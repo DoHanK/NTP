@@ -1,1 +1,2 @@
 D:\넷겜플\NTP\Server\x64\Debug\Server.exe
+E:\dohan\3-2\네트워크 게임 프로그래밍\텀프로젝트\NTP\Server\x64\Debug\Server.exe

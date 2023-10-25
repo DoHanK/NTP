@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "CGameFramework.h"	
 #include "CMeshManager.h"
-#include "/넷겜플/NTP/Server/protocol.h"
+#include "..\..\..\Server\protocol.h"
 
 #define _SERVER_TEST
 
@@ -496,6 +496,7 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 							//초기 스테이지 시작 화면
 						case MULTI_BUTTON:
 							m_GameState = MultiStage;
+							break;
 						case START_BUTTON:
 							m_GameState = PlayStage;
 							break;
@@ -569,7 +570,7 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 				::memset(&serverAddr, 0, sizeof(serverAddr));
 				serverAddr.sin_family = AF_INET;
 
-				::inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr);
+				::inet_pton(AF_INET, "192.168.0.100", &serverAddr.sin_addr);
 				serverAddr.sin_port = ::htons(PORT_NUM);    // 80 : HTTP
 
 
@@ -937,7 +938,7 @@ void CGameFrameWork::MakeInitButton()
 		m_pUIManager->CreateUIRect_Func(490, 590, 350, 700, START_BUTTON,			m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/StartBt.dds"), NULL);
 		m_pUIManager->CreateUIRect_Func(600, 700, 350, 530, CUSTOM_BUTTON,			m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/CUSTOMBt.dds"), NULL);
 		m_pUIManager->CreateUIRect_Func(600, 700, 540, 700, EXIT_BUTTON,			m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/EXITBt.dds"), NULL);
-
+		m_pUIManager->CreateUIRect_Func(0, 100, 500, 600, MULTI_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/Alphabet/a.dds"), NULL);
 		m_pUIManager->CreateUIRect(0, FRAME_BUFFER_HEIGHT, 0, FRAME_BUFFER_WIDTH,	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/StartStage.dds"));
 
 	}
