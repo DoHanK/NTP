@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\Server\protocol.h" />
     <ClInclude Include="3Dproject.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CGameFramework.h" />

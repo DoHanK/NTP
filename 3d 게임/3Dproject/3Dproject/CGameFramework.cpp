@@ -490,6 +490,9 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 						if (p.first->left < x && x < p.first->right) {
 
 							switch (p.first->purpose) {
+								//초기 스테이지 시작 화면
+							case MULTI_BUTTON:
+								m_GameState = MultiStage;
 							case START_BUTTON:
 								m_GameState = PlayStage;
 								break;
@@ -536,7 +539,8 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 					MakeCustomButton();
 					break;
 				case InitStage:
-
+					break;
+				case MultiStage: // 여기에서 윈소켓 Init과 Connect 해결
 					break;
 				}
 				m_PreGameState = m_GameState;

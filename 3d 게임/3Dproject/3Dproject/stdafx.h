@@ -56,6 +56,7 @@ enum GameState{
 	InitStage,
 	PlayStage,
 	CustomStage,
+	MultiStage,
 	EndStage
 };
 // 버튼 플래그 함수들
@@ -63,6 +64,7 @@ enum Buttom {
 	START_BUTTON,
 	EXIT_BUTTON,
 	CUSTOM_BUTTON,
+	MULTI_BUTTON,
 	BLUE_COLOR_BUTTON,
 	RED_COLOR_BUTTON,
 	GREEN_COLOR_BUTTON,
