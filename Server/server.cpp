@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -13,6 +14,8 @@
 #pragma comment(lib, "MSWSock.lib")
 
 using namespace std;
+
+void process_packet(int c_id, char* packet);
 
 class Status {
 private:
@@ -67,9 +70,10 @@ public:
 	int				money;
 	std::string		userName;
 	bool			ready;
+	char			recvBuffer[BUF_SIZE ];
 	int				recvLen;
-	char			recvBuffer[BUF_SIZE + 1];
-	int				recvLen;
+	char			sendBuffer[BUF_SIZE];
+	int				sendLen;
 	bool			error;
 
 public:
@@ -84,7 +88,7 @@ public:
 
 	~SESSION() {}
 
-	void do_recv()		// 데이터 수신
+	void do_recv()																			// 데이터 수신
 	{
 		recvLen = ::recv(socket, recvBuffer, BUF_SIZE, 0);
 		if (recvLen <= 0)
@@ -93,10 +97,12 @@ public:
 			cout << "Bind ErrorCode : " << errCode << endl;
 			error = true;
 		}
+		process_packet(id, recvBuffer);
 	}
 
 	void do_send(void* packet)		// 데이터 송신
 	{
+		memcpy(recvBuffer, reinterpret_cast<char*>(packet), sizeof(reinterpret_cast<char*>(packet)));
 		recvLen = send(socket, recvBuffer, recvLen, 0);
 		if (recvLen == SOCKET_ERROR) {
 			int errCode = ::WSAGetLastError();
@@ -107,12 +113,14 @@ public:
 	void send_login_info_packet()
 	{
 		SC_LOGIN_INFO_PACKET p;
-		p.id = id;
 		p.size = sizeof(SC_LOGIN_INFO_PACKET);
 		p.type = SC_LOGIN_INFO;
-		strcpy(p.userName, userName.c_str());
+		p.id = id;
 		p.money = money;
-
+		strcpy(p.userName, userName.c_str());
+		p.pos = status.get_pos();
+		p.top_dir = status.get_top_dir();
+		p.bottom_dir = status.get_bottom_dir();
 		do_send(&p);
 	}
 
@@ -123,6 +131,23 @@ public:
 	void send_hitted_packet(int c_id);
 };
 
+array<SESSION, MAX_USER> clients;															// 클라이언트 배열 생성
+
+void process_packet(int c_id, char* packet)
+{
+	cout << "process_packet called" << endl;
+	switch (packet[1]) {
+	case CS_LOGIN: {
+		cout << "Recv Login Packet From Client Num : " << c_id << endl;
+		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
+		clients[c_id].userName.assign(p->name);
+		clients[c_id].send_login_info_packet();
+		cout << "Send Login Info Packet To Client Num : " << c_id << endl;
+		break;
+	}
+	}
+}
+
 int get_new_client_id()
 {
 	for (int i = 0; i < MAX_USER; ++i)
@@ -131,7 +156,6 @@ int get_new_client_id()
 	return -1;
 }
 
-array<SESSION, MAX_USER> clients;
 
 
 // 클라이언트와 데이터 통신
@@ -140,6 +164,7 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 	int client_id = get_new_client_id();
 	if (client_id != -1) {
 		clients[client_id].in_use = true;
+		clients[client_id].money = 123;
 		clients[client_id].status.change_pos({ 0.f,0.f,0.f });
 		clients[client_id].status.change_top_dir({ 0.f,0.f,0.f });
 		clients[client_id].status.change_bottom_dir({ 0.f,0.f,0.f });
@@ -148,30 +173,23 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 		clients[client_id].id = client_id;
 		clients[client_id].ready = false;
 		clients[client_id].socket = (SOCKET)arg;
-		clients[client_id].do_recv();
 		cout << "Client [" << client_id << "] Login" << endl;
 	}
 	else {
 		cout << "Max user exceeded.\n";
 	}
 
-	char addr[INET_ADDRSTRLEN];
-	int addrlen;
-	char recvBuffer[BUF_SIZE + 1];
-
-	// 클라이언트 정보 얻기
-	addrlen = sizeof(clientaddr);
-	getpeername(client_sock, (struct sockaddr*)&clientaddr, &addrlen);
-	inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
-
 	while (1) {
 		clients[client_id].do_recv();
+		if (clients[client_id].error) {
+			break;
+		}
 	}
 
 	// 소켓 닫기
-	closesocket(client_sock);
-	printf("[TCP 서버] 클라이언트 종료: IP 주소=%s, 포트 번호=%d\n",
-		addr, ntohs(clientaddr.sin_port));
+	closesocket(clients[client_id].socket);
+	clients[client_id].in_use = false;
+	cout << clients[client_id].id << " 번 클라이언트 종료"<<endl;
 	return 0;
 }
 
