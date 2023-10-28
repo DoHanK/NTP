@@ -141,6 +141,7 @@ void process_packet(int c_id, char* packet)
 		cout << "Recv Login Packet From Client Num : " << c_id << endl;
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
 		clients[c_id].userName.assign(p->name);
+		std::cout << "User Name - " << clients[c_id].userName << endl;
 		clients[c_id].send_login_info_packet();
 		cout << "Send Login Info Packet To Client Num : " << c_id << endl;
 		break;
@@ -158,7 +159,7 @@ int get_new_client_id()
 
 
 
-// 클라이언트와 데이터 통신
+																								// 클라이언트와 데이터 통신
 DWORD WINAPI ProcessClient(LPVOID arg)
 {
 	int client_id = get_new_client_id();

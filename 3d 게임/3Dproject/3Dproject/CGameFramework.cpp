@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "CGameFramework.h"	
 #include "CMeshManager.h"
-#include "..\..\..\Server\protocol.h"
+#include "NetWork.h"
 
 #define _SERVER_TEST
 
@@ -549,57 +549,15 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 			case InitStage:
 				break;
 			case MultiStage: // 여기에서 윈소켓 Init과 Connect 해결
-
-				WSAData wsaData;
-				if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-					return 0;
-
-				clientSocket = ::socket(AF_INET, SOCK_STREAM, 0);
-				if (clientSocket == INVALID_SOCKET)
-				{
-					int errCode = ::WSAGetLastError();
-#ifdef _SERVER_TEST
-					TCHAR pstrDebug[256] = { 0 };
-					_stprintf_s(pstrDebug, 256, _T("Socket ErrorCode : %d\n"), errCode);
-					OutputDebugString(pstrDebug);
-#endif
-					return 0;
-				}
-
-				SOCKADDR_IN serverAddr; // Ipv4;
-				::memset(&serverAddr, 0, sizeof(serverAddr));
-				serverAddr.sin_family = AF_INET;
-
-				::inet_pton(AF_INET, "192.168.0.100", &serverAddr.sin_addr);
-				serverAddr.sin_port = ::htons(PORT_NUM);    // 80 : HTTP
-
-
-
-				if (::connect(clientSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
-				{
-					int errCode = ::WSAGetLastError();
-
-#ifdef _SERVER_TEST
-					TCHAR pstrDebug[256] = { 0 };
-					_stprintf_s(pstrDebug, 256, _T("Connect ErrorCode : %d\n"), errCode);
-					OutputDebugString(pstrDebug);
-#endif
-					return 0;
-				}
-				// --------------------------------
-				// 연결 성공! 이제부터 데이터 송수신 가능!
-#ifdef _SERVER_TEST
-				TCHAR pstrDebug[256] = { 0 };
-				_stprintf_s(pstrDebug, 256, _T("Connected To Server!"));
-				OutputDebugString(pstrDebug);
-#endif
+				InitSocket(); //로그인
 				break;
 			}
-			m_PreGameState = m_GameState;
+
+				m_PreGameState = m_GameState;
 		}
 
 	}
-
+	
 
 	return false;
 }
@@ -1038,4 +996,52 @@ CD3DX12_GPU_DESCRIPTOR_HANDLE* CGameFrameWork::GeneratorNumTex(int num)
 
 }
 
+//로그인 시도 및 서버와 연결 시도.
+int CGameFrameWork::InitSocket() {
+	int retval;
 
+	// 윈속 초기화
+	WSADATA wsa;
+	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+		return 1;
+
+	// 소켓 생성
+	m_ServerSocket = ::socket(AF_INET, SOCK_STREAM, 0);
+
+
+	// connect()
+	struct sockaddr_in serveraddr;
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	serveraddr.sin_family = AF_INET;
+	inet_pton(AF_INET, SERVERIP, &serveraddr.sin_addr);
+	serveraddr.sin_port = htons(PORT_NUM);
+
+	retval = connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+
+
+
+	//입력한 닉네임 전송.
+	CS_LOGIN_PACKET p;
+	p.size = sizeof(CS_LOGIN_PACKET);
+	p.type = CS_LOGIN;
+	strcpy(p.name, NickName.c_str());
+
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(reinterpret_cast<char*>(&p)));
+
+	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //닉네임 전송
+	
+	int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
+	if (recvLen <= 0)
+	{
+		int errCode = ::WSAGetLastError();
+		cout << "Bind ErrorCode : " << errCode << endl;
+	}
+	process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
+
+	//this_thread::sleep_for(100s);
+
+
+
+	return 0;
+
+}

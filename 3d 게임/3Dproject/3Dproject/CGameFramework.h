@@ -1,12 +1,12 @@
 #pragma once
-
+#include <array>
 #include "Timer.h"
 #include "Scene.h"
 #include "Camera.h"
 #include "Player.h"
 #include "CUiManager.h"
-
-
+///////////////서버///////////////////////////////
+#include "Session.h"
 
 
 
@@ -77,6 +77,11 @@ private:
 	//현재 게임 상태
 	int m_GameState = InitStage;
 	int m_PreGameState = InitStage;
+	std::array<SESSION,MAX_USER> m_OtherPlayer;																	//통신 받은 다른 플레이어
+	SOCKET m_ServerSocket;
+	char											m_SendBuffer[BUF_SIZE];												//SendBuffer
+	char											m_RecvBuffer[BUF_SIZE];											//RecvBuffer
+	std::string										NickName ="jongweakgggg";								//PlayName
 public:
 	CGameFrameWork();
 	~CGameFrameWork();
@@ -127,7 +132,8 @@ public:
 	void MakeEndButton();
 	void ChangeScore();
 	CD3DX12_GPU_DESCRIPTOR_HANDLE* GeneratorNumTex(int num);
-
+	//서버 연동
+	int InitSocket();
 public:
 	//12장 
 	//플레이어 객체에 대한 포인터이다.
