@@ -90,7 +90,7 @@ public:
 
 	void do_recv()																			// 데이터 수신
 	{
-		recvLen = ::recv(socket, recvBuffer, BUF_SIZE, 0);
+		recvLen = ::recv(socket, recvBuffer, BUF_SIZE, MSG_WAITALL);
 		if (recvLen <= 0)
 		{
 			int errCode = ::WSAGetLastError();
@@ -140,9 +140,9 @@ void process_packet(int c_id, char* packet)
 	case CS_LOGIN: {
 		cout << "Recv Login Packet From Client Num : " << c_id << endl;
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
-		clients[c_id].userName.assign(p->name);
-		std::cout << "User Name - " << clients[c_id].userName << endl;
+		clients[c_id].userName = p->name;
 		clients[c_id].send_login_info_packet();
+		std::cout << "User Name - " << clients[c_id].userName << endl;
 		cout << "Send Login Info Packet To Client Num : " << c_id << endl;
 		break;
 	}

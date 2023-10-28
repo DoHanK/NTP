@@ -9,6 +9,7 @@
 #include "Session.h"
 
 
+#define NameBufferSize 21
 
 class CGameFrameWork {
 private:
@@ -71,7 +72,7 @@ private:
 	CCamera* m_pCamera = NULL;
 
 	CUiManager* m_pUIManager = NULL;
-	CUiManager* m_pScoreManager = NULL;
+	CUiManager* m_pScoreManager = NULL; //score&NickName
 	CMeshManager* m_pMeshManager = NULL;
 	bool m_bRenderBoundingBox = false;
 	//현재 게임 상태
@@ -81,7 +82,8 @@ private:
 	SOCKET m_ServerSocket;
 	char											m_SendBuffer[BUF_SIZE];												//SendBuffer
 	char											m_RecvBuffer[BUF_SIZE];											//RecvBuffer
-	std::string										NickName ="jongweakgggg";								//PlayName
+	std::string										m_NickName ="jongweakgggg";								//PlayName
+	char										KeyInputBuffer[NameBufferSize];
 public:
 	CGameFrameWork();
 	~CGameFrameWork();
@@ -134,6 +136,10 @@ public:
 	CD3DX12_GPU_DESCRIPTOR_HANDLE* GeneratorNumTex(int num);
 	//서버 연동
 	int InitSocket();
+
+	void MakeLoginButton();
+	void ShowInputName();
+
 public:
 	//12장 
 	//플레이어 객체에 대한 포인터이다.

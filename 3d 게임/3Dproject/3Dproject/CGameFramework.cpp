@@ -5,7 +5,7 @@
 
 #define _SERVER_TEST
 
-SOCKET clientSocket;
+
 
 CGameFrameWork::CGameFrameWork() {
 
@@ -44,11 +44,14 @@ CGameFrameWork::CGameFrameWork() {
 	//시간 추가
 	_tcscpy_s(m_pszFrameRate, _T("LapaProject("));
 
-
+	memset(KeyInputBuffer, '\0', NameBufferSize);
 
 }
 CGameFrameWork::~CGameFrameWork() {
-
+	// 소켓 리소스 반환
+	::closesocket(m_ServerSocket);
+	// 윈속 종료
+	::WSACleanup();
 }
 
 bool CGameFrameWork::OnCreate(HINSTANCE hInstance, HWND hMainWnd) {
@@ -351,7 +354,24 @@ void CGameFrameWork::BuildObjects() {
 	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/9.dds");
 	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/alpha.dds");
 	//////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	//서버 관련 UI Update
+	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/Green.dds");
+	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/NickNameButton.dds");
+	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/LoginButton.dds");
+	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/loginBT.dds");
+		m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/nicknameLB.dds");
+	//알파벳 업로드
+	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/MultiPlayButton.dds");
+	for (int i = 0; i < 26; ++i) {
+		
+		std::string addr = "Texture/Alphabet/";
+		addr += 'a' + i;
+		addr += ".dds";
+		m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, addr.c_str());
+	}
 
+	//////////////////////////////////////////////////////////////////////////////////////////////////
 	m_pScene = new CScene();
 	m_pScene->m_MeshManager = pMeshManager;
 	m_pScene->m_pUIManger = m_pUIManager;
@@ -428,6 +448,34 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 		if (nMessageID == WM_KEYUP)
 			((CTanker*)m_pPlayer)->wheelanimation = FALSE;
 
+	if (nMessageID == WM_KEYUP)
+	if (m_GameState == LoginStage) {
+		if ('A' <= wParam) {
+			if ('Z' >= wParam) {
+				for (int i = 0; i < NameBufferSize - 1; i++) {
+					if (KeyInputBuffer[i] == '\0') {
+						KeyInputBuffer[i] = wParam;
+						KeyInputBuffer[i + 1] = '\0';
+						break;
+					}
+				}
+			}
+		}
+		else if (VK_BACK == wParam) {
+			for (int i = 0; i < NameBufferSize; i++) {
+				if (KeyInputBuffer[i] == '\0') {
+					if (i != 0) {
+						KeyInputBuffer[i - 1] = '\0';
+						break;
+					}
+					else {
+						KeyInputBuffer[0] = '\0';
+
+					}
+				}
+			}
+		}
+	}
 
 
 	
@@ -494,15 +542,19 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 
 						switch (p.first->purpose) {
 							//초기 스테이지 시작 화면
-						case MULTI_BUTTON:
-							m_GameState = MultiStage;
+						case LOGIN_BUTTON: //로그인 버튼     로그인 -> 레디스테이지로 이동
+							m_GameState = ReadyStage;
+							m_NickName = KeyInputBuffer;
+							break;
+						case  MULTI_BUTTON:  //닉네임 입력 화면으로 이동 
+							m_GameState = LoginStage;     //초기스테이지 -> 닉네임 화면 이동
 							break;
 						case START_BUTTON:
 							m_GameState = PlayStage;
 							break;
 						case EXIT_BUTTON:
 							// 소켓 리소스 반환
-							::closesocket(clientSocket);
+							::closesocket(m_ServerSocket);
 							// 윈속 종료
 							::WSACleanup();
 							exit(0);
@@ -520,7 +572,6 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 							m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankGreen.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementGreen.dds"));
 							break;
 						case YELLOW_COLOR_BUTTON:
-
 							m_pPlayer->ChangeColor(m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/TankYellow.dds"), m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/ElementYellow.dds"));
 							break;
 
@@ -534,23 +585,22 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 		}
 
 		if (m_PreGameState != m_GameState) {
-
+			m_pUIManager->DeleteAllRect();
+			m_pScoreManager->DeleteAllRect();
 			switch (m_GameState) {
 			case PlayStage:
-				m_pUIManager->DeleteAllRect();
-				m_pScoreManager->DeleteAllRect();
 				MakePlayButton();
 				break;
 			case CustomStage:
-				m_pUIManager->DeleteAllRect();
-				m_pScoreManager->DeleteAllRect();
 				MakeCustomButton();
 				break;
 			case InitStage:
 				break;
-			case MultiStage: // 여기에서 윈소켓 Init과 Connect 해결
-				InitSocket(); //로그인
+			case LoginStage: //닉네임 정하기 스테이지
+				MakeLoginButton();
 				break;
+			case ReadyStage:// 여기에서 윈소켓 Init과 Connect 해결
+				InitSocket(); //로그인
 			}
 
 				m_PreGameState = m_GameState;
@@ -768,19 +818,29 @@ void CGameFrameWork::FrameAdvance() {
 	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 #endif
 
-	if (m_GameState != InitStage) {
-		AnimateObjects();
-		if(m_GameState ==PlayStage)
+
+	
+	if (m_GameState == PlayStage)
+		{
+			AnimateObjects();
 			ProcessInput();
+			ChangeScore();
 	}
+	else if (m_GameState == CustomStage) {
+		AnimateObjects();
+	}
+	else if (m_GameState == LoginStage) {
+		ShowInputName();
+	}
+
 
 	if (m_pScene) m_pScene->Render(m_pd3dCommandList, m_pCamera);
 
 	if (m_pPlayer) ((CTanker*)(m_pPlayer))->Render(m_pd3dCommandList, m_pCamera);
 
-		ChangeScore();
 
 	if (m_bRenderBoundingBox) m_pScene->RenderBoundingBox(m_pd3dCommandList, m_pCamera);
+
 
 	if (m_pUIManager) m_pUIManager->AlDrawRect(m_pd3dCommandList);
 	if (m_pScoreManager) m_pScoreManager->AlDrawRect(m_pd3dCommandList);
@@ -896,7 +956,10 @@ void CGameFrameWork::MakeInitButton()
 		m_pUIManager->CreateUIRect_Func(490, 590, 350, 700, START_BUTTON,			m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/StartBt.dds"), NULL);
 		m_pUIManager->CreateUIRect_Func(600, 700, 350, 530, CUSTOM_BUTTON,			m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/CUSTOMBt.dds"), NULL);
 		m_pUIManager->CreateUIRect_Func(600, 700, 540, 700, EXIT_BUTTON,			m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/EXITBt.dds"), NULL);
-		m_pUIManager->CreateUIRect_Func(0, 100, 500, 600, MULTI_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/Alphabet/a.dds"), NULL);
+		m_pUIManager->CreateUIRect_Func(490, 700, 150, 350, MULTI_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/MultiPlayButton.dds"), NULL);
+
+
+
 		m_pUIManager->CreateUIRect(0, FRAME_BUFFER_HEIGHT, 0, FRAME_BUFFER_WIDTH,	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/StartStage.dds"));
 
 	}
@@ -943,6 +1006,42 @@ void CGameFrameWork::MakeEndButton()
 	m_pUIManager->CreateUIRect_Func(600, 700, FRAME_BUFFER_WIDTH/2-100, FRAME_BUFFER_WIDTH/2+100, EXIT_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/EXITBt.dds"), NULL);
 
 }
+//로그인 방
+void CGameFrameWork::MakeLoginButton() {
+	//15글자까지
+	for (int i = 0; i < NameBufferSize-1; i++)
+	{
+		m_pUIManager->CreateUIRect(490, 510, 340+20*i, 360+ 20 * i, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/Alphabet/a.dds"));
+		//m_pUIManager->CreateUIRect(485, 515, 310 , 330, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/alpha.dds"));
+	}
+	//알파벳
+	//m_pUIManager->CreateUIRect(450, 750, 320, 370, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/Alphabet/a.dds"));
+	//
+	m_pUIManager->CreateUIRect_Func(480, 520, 810, 1010, LOGIN_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/loginBT.dds"), NULL);
+	m_pUIManager->CreateUIRect(420, 570, 100, 300, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/nicknameLB.dds"));
+	m_pUIManager->CreateUIRect(480, 520, 310, 800, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/Green.dds"));
+	m_pUIManager->CreateUIRect(0, FRAME_BUFFER_HEIGHT, 0, FRAME_BUFFER_WIDTH, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/StartStage.dds"));
+	
+}
+
+void CGameFrameWork::ShowInputName()
+{
+	auto pUI = m_pUIManager->RectList.begin();
+	for (int i = 0; i < NameBufferSize - 1; i++) {
+		if (KeyInputBuffer[i] != '\0') {
+			std::string temp ="Texture/Alphabet/";
+			temp+=KeyInputBuffer[i];
+			temp += ".dds";
+			pUI->second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, temp.c_str());
+		}
+		else {
+			pUI->second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/alpha.dds");
+		}
+		pUI++;
+	}
+	//pUI = m_pUIManager->RectList.begin();
+}
+
 
 //void CGameFrameWork:
 void CGameFrameWork::ChangeScore()
@@ -964,6 +1063,7 @@ void CGameFrameWork::ChangeScore()
 		
 	}
 }
+
 
 CD3DX12_GPU_DESCRIPTOR_HANDLE* CGameFrameWork::GeneratorNumTex(int num)
 {
@@ -1024,9 +1124,9 @@ int CGameFrameWork::InitSocket() {
 	CS_LOGIN_PACKET p;
 	p.size = sizeof(CS_LOGIN_PACKET);
 	p.type = CS_LOGIN;
-	strcpy(p.name, NickName.c_str());
-
-	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(reinterpret_cast<char*>(&p)));
+	strcpy(p.name, m_NickName.c_str());
+	p.name[m_NickName.length()] = '\0';
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_LOGIN_PACKET));
 
 	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //닉네임 전송
 	
