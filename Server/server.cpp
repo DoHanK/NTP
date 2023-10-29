@@ -102,14 +102,15 @@ public:
 
 	void do_send(void* packet)		// 데이터 송신
 	{
-		memcpy(recvBuffer, reinterpret_cast<char*>(packet), sizeof(reinterpret_cast<char*>(packet)));
-		recvLen = send(socket, recvBuffer, recvLen, 0);
-		if (recvLen == SOCKET_ERROR) {
+		memcpy(sendBuffer, reinterpret_cast<char*>(packet),int(reinterpret_cast<char*>(packet)[0]));
+		recvLen = send(socket, sendBuffer, sendLen, 0);
+		if (sendLen == SOCKET_ERROR) {
 			int errCode = ::WSAGetLastError();
 			cout << "Send ErrorCode : " << errCode << endl;
 			error = true;
 		}
 	}
+	
 	void send_login_info_packet()
 	{
 		SC_LOGIN_INFO_PACKET p;
