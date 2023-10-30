@@ -88,7 +88,7 @@ public:
 
 	~SESSION() {}
 
-	void do_recv()																			// 데이터 수신
+	void do_recv()																																			// 데이터 수신
 	{
 		recvLen = ::recv(socket, recvBuffer, BUF_SIZE, MSG_WAITALL);
 		if (recvLen <= 0)
@@ -100,7 +100,7 @@ public:
 		process_packet(id, recvBuffer);
 	}
 
-	void do_send(void* packet)		// 데이터 송신
+	void do_send(void* packet)																																// 데이터 송신
 	{
 		memcpy(sendBuffer, reinterpret_cast<char*>(packet),int(reinterpret_cast<char*>(packet)[0]));
 		recvLen = send(socket, sendBuffer, sendLen, 0);
@@ -132,7 +132,7 @@ public:
 	void send_hitted_packet(int c_id);
 };
 
-array<SESSION, MAX_USER> clients;															// 클라이언트 배열 생성
+array<SESSION, MAX_USER> clients;																												// 클라이언트 배열 생성
 
 void process_packet(int c_id, char* packet)
 {
@@ -160,7 +160,7 @@ int get_new_client_id()
 
 
 
-																								// 클라이언트와 데이터 통신
+																																				// 클라이언트와 데이터 통신
 DWORD WINAPI ProcessClient(LPVOID arg)
 {
 	int client_id = get_new_client_id();
@@ -188,7 +188,7 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 		}
 	}
 
-	// 소켓 닫기
+																																						// 소켓 닫기
 	closesocket(clients[client_id].socket);
 	clients[client_id].in_use = false;
 	cout << clients[client_id].id << " 번 클라이언트 종료"<<endl;
@@ -197,12 +197,12 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 
 int main(int argc, char* argv[])
 {
-	// 윈속 초기화
+																																						// 윈속 초기화
 	WSAData wsaData;
 	if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 		return 0;
 
-	// 소켓 생성
+																																						// 소켓 생성
 	SOCKET listenSocket = ::socket(AF_INET, SOCK_STREAM, 0);
 	if (listenSocket == INVALID_SOCKET)
 	{
@@ -211,13 +211,13 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	// bind()
+																																						// bind()
 
-	SOCKADDR_IN serverAddr; // Ipv4;
+	SOCKADDR_IN serverAddr;
 	::memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = ::htonl(INADDR_ANY); // < 니가 알아서 해줘
-	serverAddr.sin_port = ::htons(PORT_NUM);    // 80 : HTTP
+	serverAddr.sin_addr.s_addr = ::htonl(INADDR_ANY);
+	serverAddr.sin_port = ::htons(PORT_NUM);
 
 	if (::bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
 	{
@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	// listen()
+																																						// listen()
 	if (::listen(listenSocket, SOMAXCONN) == SOCKET_ERROR)
 	{
 		int errCode = ::WSAGetLastError();
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	// 데이터 통신에 사용할 변수
+																																		// 데이터 통신에 사용할 변수
 	SOCKET clientSocket;
 	SOCKADDR_IN clientAddr;
 	int addrLen;
@@ -243,7 +243,7 @@ int main(int argc, char* argv[])
 	int num_threads = std::thread::hardware_concurrency();
 
 	while (1) {
-		// accept()
+																																						// accept()
 		addrLen = sizeof(clientAddr);
 		clientSocket = accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
 		if (clientSocket == INVALID_SOCKET)
@@ -253,20 +253,20 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
-		// 손님 입장!
+																																						// 손님 입장!
 		char ipAddress[16];
 		::inet_ntop(AF_INET, &clientAddr.sin_addr, ipAddress, sizeof(ipAddress));
 		cout << "Client Connected! IP = " << ipAddress << endl;
 
-		// 스레드 생성
+																																						// 스레드 생성
 		worker_threads.emplace_back(ProcessClient, (LPVOID)clientSocket);
 	}
 	for (auto& th : worker_threads)
 		th.join();
-	// 소켓 닫기
+																																						// 소켓 닫기
 	closesocket(listenSocket);
 
-	// 윈속 종료
+																																						// 윈속 종료
 	WSACleanup();
 	return 0;
 }

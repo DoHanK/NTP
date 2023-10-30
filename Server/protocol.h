@@ -7,7 +7,7 @@ constexpr int NAME_SIZE = 40;
 
 constexpr int MAX_USER = 4;
 
-// Packet ID
+																																							// Packet ID
 constexpr char CS_LOGIN = 0;
 constexpr char CS_MOVE = 1;
 
@@ -17,19 +17,20 @@ constexpr char SC_REMOVE_PLAYER = 4;
 constexpr char SC_MOVE_PLAYER = 5;
 
 #pragma pack (push, 1)
-struct CS_LOGIN_PACKET {
+struct CS_LOGIN_PACKET {																															// C -> S 로그인 패킷
 	unsigned char	size;
 	char			type;
 	char			name[NAME_SIZE];
-};
+};		
 
-struct CS_CHANGE_COLOR_PACKET {
+																							 
+struct CS_CHANGE_COLOR_PACKET {																														// C -> S 색깔 바꾸기 패킷
 	unsigned char	size;
 	char			type;
 	int				color;
 };
 
-struct CS_MOVE_PACKET {
+struct CS_MOVE_PACKET {																																// C -> S 이동 패킷
 	unsigned char	ize;
 	char			type;
 	XMFLOAT3		pos;
@@ -37,7 +38,7 @@ struct CS_MOVE_PACKET {
 	XMFLOAT3		bottom_dir;
 };
 
-struct CS_BULLET_PACKET {
+struct CS_BULLET_PACKET {																															// C -> S 총알 패킷
 	unsigned char	size;
 	char			type;
 	int				color;
@@ -45,7 +46,7 @@ struct CS_BULLET_PACKET {
 	int				damage;
 };
 
-struct SC_LOGIN_INFO_PACKET {
+struct SC_LOGIN_INFO_PACKET {																														// S -> C 로그인 정보 패킷
 	unsigned char	size;
 	char			type;
 	short			id;
@@ -56,14 +57,14 @@ struct SC_LOGIN_INFO_PACKET {
 	XMFLOAT3		bottom_dir;
 };
 
-struct SC_CHANGE_COLOR_PACKET {
+struct SC_CHANGE_COLOR_PACKET {																														// S -> C 색깔 바꾸기 패킷
 	unsigned char	size;
 	char			type;
 	short			id;
 	int				color;
 };
 
-struct SC_ADD_PLAYER_PACKET {
+struct SC_ADD_PLAYER_PACKET {																														// S -> C 플레이어 추가 패킷
 	unsigned char	size;
 	char			type;
 	short			id;
@@ -73,13 +74,13 @@ struct SC_ADD_PLAYER_PACKET {
 	char			name[NAME_SIZE];
 };
 
-struct SC_REMOVE_PLAYER_PACKET {
+struct SC_REMOVE_PLAYER_PACKET {																													// S -> C 플레이어 제거 패킷
 	unsigned char	size;
 	char			type;
 	short			id;
 };
 
-struct SC_MOVE_PLAYER_PACKET {
+struct SC_MOVE_PLAYER_PACKET {																														// S -> C 이동 패킷
 	unsigned char	size;
 	char			type;
 	short			id;
@@ -88,14 +89,14 @@ struct SC_MOVE_PLAYER_PACKET {
 	XMFLOAT3		bottom_dir;
 };
 
-struct SC_HITTED_PACKET {
-	unsigned char	size;
+struct SC_HITTED_PACKET {																															// S -> C 피격 패킷
+	unsigned char	size;	
 	char			type;
 	short			id;
 	int				hp;
 };
 
-struct SC_BULLET_PACKET {
+struct SC_BULLET_PACKET {																															// S -> C 총알 패킷
 	unsigned char	size;
 	char			type;
 	int				index;
