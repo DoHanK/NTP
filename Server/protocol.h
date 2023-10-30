@@ -10,11 +10,13 @@ constexpr int MAX_USER = 4;
 																																							// Packet ID
 constexpr char CS_LOGIN = 0;
 constexpr char CS_MOVE = 1;
+constexpr char CS_READY = 2;
 
 constexpr char SC_LOGIN_INFO = 2;
 constexpr char SC_ADD_PLAYER = 3;
 constexpr char SC_REMOVE_PLAYER = 4;
 constexpr char SC_MOVE_PLAYER = 5;
+constexpr char SC_READY = 6;
 
 #pragma pack (push, 1)
 struct CS_LOGIN_PACKET {																															// C -> S 로그인 패킷
@@ -44,6 +46,12 @@ struct CS_BULLET_PACKET {																															// C -> S 총알 패킷
 	int				color;
 	int				index;
 	int				damage;
+};
+
+struct CS_READY_PACKET {																															// C -> S 레디 패킷
+	unsigned char	size;
+	char			type;
+	bool			ready;
 };
 
 struct SC_LOGIN_INFO_PACKET {																														// S -> C 로그인 정보 패킷
@@ -106,5 +114,11 @@ struct SC_BULLET_PACKET {																															// S -> C 총알 패킷
 	bool			in_use;
 };
 
+struct SC_READY_PACKET {
+	unsigned char	size;
+	char			type;
+	short			id;
+	bool			ready;
+};
 
 #pragma pack (pop)

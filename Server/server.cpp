@@ -124,8 +124,10 @@ public:
 		p.bottom_dir = status.get_bottom_dir();
 		do_send(&p);
 	}
+	void send_ready_packet(int c_id)
+	{
 
-
+	}
 	void send_move_packet(int c_id);
 	void send_attack_packet(int c_id);
 	void send_dead_packet(int c_id);
@@ -146,6 +148,16 @@ void process_packet(int c_id, char* packet)
 		std::cout << "User Name - " << clients[c_id].userName << endl;
 		cout << "Send Login Info Packet To Client Num : " << c_id << endl;
 		break;
+	}
+	case CS_READY: {
+		CS_READY_PACKET* p = reinterpret_cast<CS_READY_PACKET*>(packet);
+		if (clients[c_id].ready)
+			clients[c_id].ready = false;
+		else
+			clients[c_id].ready = true;
+		for (auto pl : clients) {
+			pl.send_ready_packet(c_id);
+		}
 	}
 	}
 }
