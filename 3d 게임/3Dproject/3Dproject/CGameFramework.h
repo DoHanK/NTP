@@ -9,7 +9,14 @@
 #include "Session.h"
 
 
-#define NameBufferSize 21
+#define NameBufferSize 7 //닉네임 6글자까지 입력 가능
+
+
+enum Color {
+	blue, red, green, yellow
+};
+
+
 
 class CGameFrameWork {
 private:
@@ -82,7 +89,7 @@ private:
 	SOCKET m_ServerSocket;
 	char											m_SendBuffer[BUF_SIZE];												//SendBuffer
 	char											m_RecvBuffer[BUF_SIZE];											//RecvBuffer
-	std::string										m_NickName ="jongweakgggg";								//PlayName
+	
 	char										KeyInputBuffer[NameBufferSize];
 public:
 	CGameFrameWork();
@@ -139,7 +146,8 @@ public:
 
 	void MakeLoginButton();
 	void ShowInputName();
-
+	void Makemulticustomebutton();
+	void MakeReadyStage();
 public:
 	//12장 
 	//플레이어 객체에 대한 포인터이다.
@@ -149,5 +157,7 @@ public:
 
 	CGameObject* m_pSelectedObject = NULL;
 
-
+	bool					m_ready = false;
+	std::string				m_NickName = "seojin";								//PlayName
+	Color					m_color;
 };
