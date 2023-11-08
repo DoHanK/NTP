@@ -623,13 +623,15 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 			case InitStage:
 				break;
 			case LoginStage: //Multi 부분과 button 
-				Makemulticustomebutton();
 				InitSocket(); //로그인
+				m_conneted = true;
+				Makemulticustomebutton();
 
 				break;
 			case ReadyStage:// 여기에서 윈소켓 Init과 Connect 해결
+				EnterRoom();
 				MakeReadyStage();
-
+				break;
 			}
 
 				m_PreGameState = m_GameState;
@@ -790,8 +792,17 @@ void CGameFrameWork::WaitForGpuComplete() {
 //#define _WITH_PLAYER_TOP
 void CGameFrameWork::FrameAdvance() {
 
+	//서버 받는 곳
+	if (m_conneted) {
+		int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
+		if (::WSAGetLastError() == WSAEWOULDBLOCK) {
 
+		}
+		else {
 
+			process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
+		}
+	}
 
 
 
@@ -1223,8 +1234,13 @@ int CGameFrameWork::InitSocket() {
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 		return 1;
 
+
 	// 소켓 생성
 	m_ServerSocket = ::socket(AF_INET, SOCK_STREAM, 0);
+
+	u_long on = 1;
+	if (::ioctlsocket(m_ServerSocket, FIONBIO, &on) == INVALID_SOCKET)
+		return 0;
 
 
 	// connect()
@@ -1234,17 +1250,32 @@ int CGameFrameWork::InitSocket() {
 	inet_pton(AF_INET, SERVERIP, &serveraddr.sin_addr);
 	serveraddr.sin_port = htons(PORT_NUM);
 
-	retval = connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
-	if (retval) {
-		TCHAR temp[256];
-		int errCode = ::WSAGetLastError();
-		//std::to_wstring(errCode);
+	//retval = connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+	//if (retval) {
+	//	TCHAR temp[256];
+	//	int errCode = ::WSAGetLastError();
+	//	//std::to_wstring(errCode);
 
-		//_stprintf_s(temp, 256, _T(std::to_string(errCode)));
-		OutputDebugString(std::to_wstring(errCode).c_str());
-		
+	//	//_stprintf_s(temp, 256, _T(std::to_string(errCode)));
+	//	OutputDebugString(std::to_wstring(errCode).c_str());
+	//	
+	//}
+
+	while (true)
+	{
+		if (::connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == SOCKET_ERROR)
+		{
+			// 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
+			if (::WSAGetLastError() == WSAEWOULDBLOCK)
+				continue;
+
+			// 이미 연결된 상태라면 break;
+			if (::WSAGetLastError() == WSAEISCONN)
+				break;
+
+
+		}
 	}
-
 
 
 	//입력한 닉네임 전송.
@@ -1257,32 +1288,24 @@ int CGameFrameWork::InitSocket() {
 
 	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //닉네임 전송
 	
-	int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
-	if (recvLen <= 0)
-	{
-		int errCode = ::WSAGetLastError();
-		cout << "Bind ErrorCode : " << errCode << endl;
-	}
-	process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
 
-
+	
 	return 0;
 
 }
 //Send 
 
 void CGameFrameWork::EnterRoom() {
-	CS_LOGIN_PACKET p;
-	p.size = sizeof(CS_LOGIN_PACKET);
-	p.type = CS_LOGIN;
-	strcpy(p.name, m_NickName.c_str());
-	p.name[m_NickName.length()] = '\0';
-	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_LOGIN_PACKET));
-
-	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //닉네임 전송
+	CS_ENTER_ROOM_PACKET p;
+	p.size = sizeof(CS_ENTER_ROOM_PACKET);
+	p.type = CS_ENTER_ROOM;
+	p.color = m_color;
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_ENTER_ROOM_PACKET));
+	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //방입장 패킷 전송
 
 
 }
+
 
 
 
@@ -1298,10 +1321,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[m_myid].id = p->id;
 		m_OtherPlayer[m_myid].money = p->money;
 		m_OtherPlayer[m_myid].userName = p->userName;
-
-
-
+		PrintPlayerInfo(m_myid);
 		break;
+
 	}
 	}
 }

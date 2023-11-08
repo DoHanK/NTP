@@ -173,9 +173,10 @@ public:
 	CGameObject* m_pSelectedObject = NULL;
 
 	bool					m_ready = false;
-	std::string				m_NickName = "seojin";								//PlayName
 	Color					m_color;
+	std::string				m_NickName = "seojin";								//PlayName
 
+	bool	m_conneted = false;
 	//Recv정보 처리 함수
 	void process_packet(int c_id, char* packet);
 
