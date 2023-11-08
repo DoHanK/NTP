@@ -192,7 +192,7 @@ void process_packet(int c_id, char* packet)
 			pl.send_ready_packet(c_id);
 		}
 	}
-	case CE_ENTER_ROOM: {
+	case CS_ENTER_ROOM: {
 		CS_ENTER_ROOM_PACKET* p = reinterpret_cast<CS_ENTER_ROOM_PACKET*>(packet);
 		for (int i = 0; i < room.size(); ++i) {
 			if (room[i] == 0) {
