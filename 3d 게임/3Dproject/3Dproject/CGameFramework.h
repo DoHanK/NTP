@@ -85,12 +85,13 @@ private:
 	//현재 게임 상태
 	int m_GameState = InitStage;
 	int m_PreGameState = InitStage;
-	std::array<SESSION,MAX_USER> m_OtherPlayer;																	//통신 받은 다른 플레이어
+	std::array<SESSION,MAX_USER> m_OtherPlayer;																									// 통신 받은 다른 플레이어
 	SOCKET m_ServerSocket;
-	char											m_SendBuffer[BUF_SIZE];												//SendBuffer
-	char											m_RecvBuffer[BUF_SIZE];											//RecvBuffer
-	
-	char										KeyInputBuffer[NameBufferSize];
+	char	m_SendBuffer[BUF_SIZE];																												// SendBuffer
+	int		sendLen;																													
+	char	m_RecvBuffer[BUF_SIZE];																												// RecvBuffer
+	int		recvLen;
+	char	KeyInputBuffer[NameBufferSize];
 public:
 	CGameFrameWork();
 	~CGameFrameWork();
@@ -148,6 +149,16 @@ public:
 	void ShowInputName();
 	void Makemulticustomebutton();
 	void MakeReadyStage();
+	void do_send(void* packet)																																// 데이터 송신
+	{
+		sendLen = int(reinterpret_cast<char*>(packet)[0]);
+		memcpy(m_SendBuffer, reinterpret_cast<char*>(packet), sendLen);
+		sendLen = send(m_ServerSocket, m_SendBuffer, sendLen, 0);
+		if (sendLen == SOCKET_ERROR) {
+			int errCode = ::WSAGetLastError();
+			cout << "Send ErrorCode : " << errCode << endl;
+		}
+	}
 public:
 	//12장 
 	//플레이어 객체에 대한 포인터이다.

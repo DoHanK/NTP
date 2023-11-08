@@ -3,6 +3,7 @@
 #include <thread>
 #include <vector>
 #include <array>
+#include <mutex>
 
 #include <WinSock2.h>
 #include <MSWSock.h>
@@ -16,6 +17,7 @@
 using namespace std;
 
 void process_packet(int c_id, char* packet);
+
 
 class Status {
 private:
@@ -75,7 +77,7 @@ public:
 	char			sendBuffer[BUF_SIZE];
 	int				sendLen;
 	bool			error;
-
+	mutex m;
 public:
 	SESSION() : socket(0), in_use(false)
 	{
@@ -102,8 +104,9 @@ public:
 
 	void do_send(void* packet)																																// 데이터 송신
 	{
-		memcpy(sendBuffer, reinterpret_cast<char*>(packet),int(reinterpret_cast<char*>(packet)[0]));
-		recvLen = send(socket, sendBuffer, sendLen, 0);
+		sendLen = int(reinterpret_cast<char*>(packet)[0]);
+		memcpy(sendBuffer, reinterpret_cast<char*>(packet),sendLen);
+		sendLen = send(socket, sendBuffer, sendLen, 0);
 		if (sendLen == SOCKET_ERROR) {
 			int errCode = ::WSAGetLastError();
 			cout << "Send ErrorCode : " << errCode << endl;
@@ -124,10 +127,8 @@ public:
 		p.bottom_dir = status.get_bottom_dir();
 		do_send(&p);
 	}
-	void send_ready_packet(int c_id)
-	{
+	void send_ready_packet(int c_id);
 
-	}
 	void send_move_packet(int c_id);
 	void send_attack_packet(int c_id);
 	void send_dead_packet(int c_id);
@@ -135,6 +136,16 @@ public:
 };
 
 array<SESSION, MAX_USER> clients;																												// 클라이언트 배열 생성
+
+void SESSION::send_ready_packet(int c_id)
+{
+	SC_READY_PACKET p;
+	p.size = sizeof(SC_READY_PACKET);
+	p.type = SC_READY;
+	p.id = c_id;
+	p.ready = clients[c_id].ready;
+	do_send(&p);
+}
 
 void process_packet(int c_id, char* packet)
 {
@@ -155,7 +166,10 @@ void process_packet(int c_id, char* packet)
 			clients[c_id].ready = false;
 		else
 			clients[c_id].ready = true;
-		for (auto pl : clients) {
+
+		for (auto &pl : clients) {
+			if (pl.id == clients[c_id].id)
+				continue;
 			pl.send_ready_packet(c_id);
 		}
 	}

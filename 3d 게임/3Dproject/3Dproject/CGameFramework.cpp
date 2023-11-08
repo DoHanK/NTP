@@ -592,14 +592,15 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 							break;
 
 						case READY_BUTTON:
-							/*if (m_ready) {
+							if (m_ready) {
 								m_ready = false;
 							}
 							else {
 								m_ready = true;
 							}
-							break;*/
-							m_GameState = PlayStage;
+							
+							m_GameState = PlayStage;		// 서진이가 알아서 수정
+							break;
 						}
 					}
 
