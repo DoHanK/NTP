@@ -187,23 +187,35 @@ void process_packet(int c_id, char* packet)
 			clients[c_id].ready = true;
 
 		for (auto &pl : clients) {
+			if (pl.in_use == false)
+				continue;
 			if (pl.id == clients[c_id].id)
 				continue;
 			pl.send_ready_packet(c_id);
 		}
 	}
 	case CS_ENTER_ROOM: {
+		cout << "Recv Enter Room Packet From Client Num : " << c_id << endl;
+
 		CS_ENTER_ROOM_PACKET* p = reinterpret_cast<CS_ENTER_ROOM_PACKET*>(packet);
 		for (int i = 0; i < room.size(); ++i) {
 			if (room[i] == 0) {
-				room[i] = 1;
+				room[i] = c_id + 1;
 				clients[c_id].pos_num = i;
 				break;
 			}
 		}
 		clients[c_id].color = p->color;
 		for (auto &pl : clients) {
+			if (pl.in_use == false)
+				continue;
+			if (pl.id == c_id)
+				continue;
 			pl.send_enter_room_packet(c_id);
+		}
+		for (int i = 0; i < room.size();  ++i) {
+			if (room[i] != 0)
+				clients[c_id].send_enter_room_packet(room[i] - 1);
 		}
 	}
 	}
