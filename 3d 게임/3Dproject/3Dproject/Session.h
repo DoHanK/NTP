@@ -60,6 +60,8 @@ public:
 	int				id;
 	SOCKET			socket;
 	Status			status;
+	int				pos_num;
+	int				color;
 	int				money;
 	std::string		userName;
 	bool			ready;

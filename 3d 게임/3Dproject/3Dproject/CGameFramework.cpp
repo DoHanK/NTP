@@ -1322,8 +1322,18 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[m_myid].money = p->money;
 		m_OtherPlayer[m_myid].userName = p->userName;
 		PrintPlayerInfo(m_myid);
-		break;
+		break; 
+	}
+	case SC_ENTER_ROOM:{
 
+		SC_ENTER_ROOM_PACKET* p = reinterpret_cast<SC_ENTER_ROOM_PACKET*>(packet);
+		m_OtherPlayer[p->id].id = p->id;
+		m_OtherPlayer[p->id].userName = p->name;
+		m_OtherPlayer[p->id].color = p->color;
+		m_OtherPlayer[p->id].pos_num = p->pos_num;
+
+		PrintPlayerInfo(p->id);
+		break;
 	}
 	}
 }
@@ -1337,6 +1347,17 @@ void CGameFrameWork::PrintPlayerInfo(int c_id)
 
 	DebugPlayerInfo += "아이디: ";
 	DebugPlayerInfo += to_string(m_OtherPlayer[c_id].id);
+	DebugPlayerInfo += "\n";
+
+	DebugPlayerInfo += "레디상태: ";
+	DebugPlayerInfo += to_string(m_OtherPlayer[c_id].ready);
+	DebugPlayerInfo += "\n";
+
+	DebugPlayerInfo += "색깔: ";
+	DebugPlayerInfo += to_string(m_OtherPlayer[c_id].color);
+	DebugPlayerInfo += "\n";
+	DebugPlayerInfo += "위치 : ";
+	DebugPlayerInfo += to_string(m_OtherPlayer[c_id].pos_num);
 	DebugPlayerInfo += "\n";
 
 	OutputDebugStringA(DebugPlayerInfo.c_str());
