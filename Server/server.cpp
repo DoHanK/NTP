@@ -19,6 +19,9 @@ using namespace std;
 void process_packet(int c_id, char* packet);
 
 
+array<int, 4> room;
+
+
 class Status {
 private:
 	int hp;
@@ -69,6 +72,7 @@ public:
 	int				id;
 	SOCKET			socket;
 	Status			status;
+	int				color;
 	int				money;
 	std::string		userName;
 	bool			ready;
@@ -77,6 +81,7 @@ public:
 	char			sendBuffer[BUF_SIZE];
 	int				sendLen;
 	bool			error;
+	int				pos_num;
 	mutex m;
 public:
 	SESSION() : socket(0), in_use(false)
@@ -98,6 +103,8 @@ public:
 			int errCode = ::WSAGetLastError();
 			cout << "Bind ErrorCode : " << errCode << endl;
 			error = true;
+			room[pos_num] = 0;
+			return;
 		}
 		process_packet(id, recvBuffer);
 	}
@@ -128,7 +135,7 @@ public:
 		do_send(&p);
 	}
 	void send_ready_packet(int c_id);
-
+	void send_enter_room_packet(int c_id);
 	void send_move_packet(int c_id);
 	void send_attack_packet(int c_id);
 	void send_dead_packet(int c_id);
@@ -146,6 +153,18 @@ void SESSION::send_ready_packet(int c_id)
 	p.ready = clients[c_id].ready;
 	do_send(&p);
 }
+void SESSION::send_enter_room_packet(int c_id)
+{
+	SC_ENTER_ROOM_PACKET p;
+	p.size = sizeof(SC_ENTER_ROOM_PACKET);
+	p.type = SC_ENTER_ROOM;
+	p.id = c_id;
+	strcpy(p.name, clients[c_id].userName.c_str());
+	p.color = clients[c_id].color;
+	p.pos_num = clients[c_id].pos_num;
+	do_send(&p);
+}
+
 
 void process_packet(int c_id, char* packet)
 {
@@ -171,6 +190,20 @@ void process_packet(int c_id, char* packet)
 			if (pl.id == clients[c_id].id)
 				continue;
 			pl.send_ready_packet(c_id);
+		}
+	}
+	case CE_ENTER_ROOM: {
+		CS_ENTER_ROOM_PACKET* p = reinterpret_cast<CS_ENTER_ROOM_PACKET*>(packet);
+		for (int i = 0; i < room.size(); ++i) {
+			if (room[i] == 0) {
+				room[i] = 1;
+				clients[c_id].pos_num = i;
+				break;
+			}
+		}
+		clients[c_id].color = p->color;
+		for (auto &pl : clients) {
+			pl.send_enter_room_packet(c_id);
 		}
 	}
 	}
@@ -200,6 +233,7 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 
 		clients[client_id].id = client_id;
 		clients[client_id].ready = false;
+		clients[client_id].error = false;
 		clients[client_id].socket = (SOCKET)arg;
 		cout << "Client [" << client_id << "] Login" << endl;
 	}
