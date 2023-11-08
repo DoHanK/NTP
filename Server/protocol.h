@@ -11,12 +11,14 @@ constexpr int MAX_USER = 4;
 constexpr char CS_LOGIN = 0;
 constexpr char CS_MOVE = 1;
 constexpr char CS_READY = 2;
+constexpr char CE_ENTER_ROON = 3;
 
 constexpr char SC_LOGIN_INFO = 2;
 constexpr char SC_ADD_PLAYER = 3;
 constexpr char SC_REMOVE_PLAYER = 4;
 constexpr char SC_MOVE_PLAYER = 5;
 constexpr char SC_READY = 6;
+constexpr char SC_ENTER_ROOM = 7;
 
 #pragma pack (push, 1)
 struct CS_LOGIN_PACKET {																															// C -> S 로그인 패킷
