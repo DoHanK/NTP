@@ -623,13 +623,15 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 			case InitStage:
 				break;
 			case LoginStage: //Multi 부분과 button 
-				Makemulticustomebutton();
 				InitSocket(); //로그인
+				m_conneted = true;
+				Makemulticustomebutton();
 
 				break;
 			case ReadyStage:// 여기에서 윈소켓 Init과 Connect 해결
+				EnterRoom();
 				MakeReadyStage();
-
+				break;
 			}
 
 				m_PreGameState = m_GameState;
@@ -790,8 +792,18 @@ void CGameFrameWork::WaitForGpuComplete() {
 //#define _WITH_PLAYER_TOP
 void CGameFrameWork::FrameAdvance() {
 
-
-
+	//서버 받는 곳
+	if (m_conneted) {
+		int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
+		if (recvLen <= 0)
+		{
+			int errCode = ::WSAGetLastError();
+			cout << "Bind ErrorCode : " << errCode << endl;
+		}
+		
+		process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
+		
+	}
 
 
 
@@ -1257,32 +1269,24 @@ int CGameFrameWork::InitSocket() {
 
 	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //닉네임 전송
 	
-	int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
-	if (recvLen <= 0)
-	{
-		int errCode = ::WSAGetLastError();
-		cout << "Bind ErrorCode : " << errCode << endl;
-	}
-	process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
 
-
+	
 	return 0;
 
 }
 //Send 
 
 void CGameFrameWork::EnterRoom() {
-	CS_LOGIN_PACKET p;
-	p.size = sizeof(CS_LOGIN_PACKET);
-	p.type = CS_LOGIN;
-	strcpy(p.name, m_NickName.c_str());
-	p.name[m_NickName.length()] = '\0';
-	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_LOGIN_PACKET));
-
-	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //닉네임 전송
+	CS_ENTER_ROOM_PACKET p;
+	p.size = sizeof(CS_ENTER_ROOM_PACKET);
+	p.type = CS_ENTER_ROOM;
+	p.color = m_color;
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_ENTER_ROOM_PACKET));
+	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //방입장 패킷 전송
 
 
 }
+
 
 
 
@@ -1298,10 +1302,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[m_myid].id = p->id;
 		m_OtherPlayer[m_myid].money = p->money;
 		m_OtherPlayer[m_myid].userName = p->userName;
-
-
-
+		PrintPlayerInfo(m_myid);
 		break;
+
 	}
 	}
 }
