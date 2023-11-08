@@ -87,6 +87,7 @@ private:
 	int m_PreGameState = InitStage;
 	std::array<SESSION,MAX_USER> m_OtherPlayer;																									// 통신 받은 다른 플레이어
 	SOCKET m_ServerSocket;
+	int		m_myid;
 	char	m_SendBuffer[BUF_SIZE];																												// SendBuffer
 	int		sendLen;																													
 	char	m_RecvBuffer[BUF_SIZE];																												// RecvBuffer
@@ -144,6 +145,9 @@ public:
 	CD3DX12_GPU_DESCRIPTOR_HANDLE* GeneratorNumTex(int num);
 	//서버 연동
 	int InitSocket();
+	
+	void EnterRoom();
+
 
 	void MakeLoginButton();
 	void ShowInputName();
@@ -171,4 +175,10 @@ public:
 	bool					m_ready = false;
 	std::string				m_NickName = "seojin";								//PlayName
 	Color					m_color;
+
+	//Recv정보 처리 함수
+	void process_packet(int c_id, char* packet);
+
+	//print Player Info
+	void PrintPlayerInfo(int c_id);
 };

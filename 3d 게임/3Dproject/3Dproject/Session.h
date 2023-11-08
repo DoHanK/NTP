@@ -5,11 +5,11 @@
 
 using namespace std;
 
-//char* SERVERIP = (char*)"127.0.0.1";
-#define SERVERIP "127.0.0.1"
 
-void process_packet(int c_id, char* packet);
+#define SERVERIP "192.168.82.44"
 
+
+void PrintVal(int c_id);
 class Status {
 private:
 	int            hp;
@@ -81,33 +81,32 @@ public:
 
 	~SESSION() {}
 
-	void do_recv()      // 데이터 수신
-	{
-		recvLen = ::recv(socket, recvBuffer, BUF_SIZE, 0);
-		if (recvLen <= 0)
-		{
-			int errCode = ::WSAGetLastError();
-			cout << "Bind ErrorCode : " << errCode << endl;
-			error = true;
-		}
-		process_packet(id, recvBuffer);
-	}
+	//void do_recv()      // 데이터 수신
+	//{
+	//	recvLen = ::recv(socket, recvBuffer, BUF_SIZE, 0);
+	//	if (recvLen <= 0)
+	//	{
+	//		int errCode = ::WSAGetLastError();
+	//		cout << "Bind ErrorCode : " << errCode << endl;
+	//		error = true;
+	//	}
+	//	process_packet(id, recvBuffer);
+	//}
 
-	void do_send(void* packet)      // 데이터 송신
-	{
-		memcpy(sendBuffer, reinterpret_cast<char*>(packet), int(reinterpret_cast<char*>(packet)[0]));
-		recvLen = send(socket, sendBuffer, sendLen, 0);
-		if (sendLen == SOCKET_ERROR) {
-			int errCode = ::WSAGetLastError();
-			cout << "Send ErrorCode : " << errCode << endl;
-			error = true;
-		}
-	}
+	//void do_send(void* packet)      // 데이터 송신
+	//{
+	//	memcpy(sendBuffer, reinterpret_cast<char*>(packet), int(reinterpret_cast<char*>(packet)[0]));
+	//	recvLen = send(socket, sendBuffer, sendLen, 0);
+	//	if (sendLen == SOCKET_ERROR) {
+	//		int errCode = ::WSAGetLastError();
+	//		cout << "Send ErrorCode : " << errCode << endl;
+	//		error = true;
+	//	}
+	//}
 };
 
 
 
-void process_packet(int c_id, char* packet);//패킷 처리 함수
 
 
 

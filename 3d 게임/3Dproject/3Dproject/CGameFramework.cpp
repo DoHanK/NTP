@@ -556,12 +556,12 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 						//	m_GameState = ReadyStage;
 						//	m_NickName = KeyInputBuffer;
 						//	break;
-						case  MULTI_BUTTON:  //닉네임 입력 화면으로 이동 
-							//m_GameState = LoginStage;     //초기스테이지 -> 닉네임 화면 이동
+						case  MULTI_BUTTON:  //ReadyStage-> 레디버튼과, 서버에 연결
+
 							m_GameState = ReadyStage;
 							break;
-						case START_BUTTON:
-							//m_GameState = PlayStage;
+						case START_BUTTON: //로그인 스테이지로 이동-> 로그인 스테이지(Multi버튼와 Custom버튼 존재) 
+							//서버에 접속
 							m_GameState = LoginStage;
 							break;
 						case EXIT_BUTTON:
@@ -622,14 +622,14 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 				break;
 			case InitStage:
 				break;
-			case LoginStage: //닉네임 정하기 스테이지
-				//MakeLoginButton();
+			case LoginStage: //Multi 부분과 button 
 				Makemulticustomebutton();
+				InitSocket(); //로그인
+
 				break;
 			case ReadyStage:// 여기에서 윈소켓 Init과 Connect 해결
 				MakeReadyStage();
 
-				InitSocket(); //로그인
 			}
 
 				m_PreGameState = m_GameState;
@@ -1035,6 +1035,7 @@ void CGameFrameWork::MakePlayButton()
 	char filename[50];
 	for (int i = 0; i < m_NickName.length(); i++) {
 		std::string temp = "Texture/Alphabet/";
+		//플레이어 이름을 띄우기 위해함
 		temp += m_NickName[i];
 		for (int i = 0; i < temp.length(); i++) {
 			filename[i] = temp[i];
@@ -1150,9 +1151,11 @@ void CGameFrameWork::ShowInputName()
 	pUI = m_pUIManager->RectList.begin();
 
 
-	for (int i = 0; KeyInputBuffer[i] != '\0'; i++) {
-		m_NickName[i] = KeyInputBuffer[i];
-	}
+
+	//Keyinput의 널 값을 기준으로 돌면, String이 더 길경우, 제대로 복사가 이뤄지지 않음.
+	//string으로 복사하면 전에꺼가 남아져 있음
+	m_NickName = KeyInputBuffer;
+	
 
 
 }
@@ -1232,6 +1235,15 @@ int CGameFrameWork::InitSocket() {
 	serveraddr.sin_port = htons(PORT_NUM);
 
 	retval = connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+	if (retval) {
+		TCHAR temp[256];
+		int errCode = ::WSAGetLastError();
+		//std::to_wstring(errCode);
+
+		//_stprintf_s(temp, 256, _T(std::to_string(errCode)));
+		OutputDebugString(std::to_wstring(errCode).c_str());
+		
+	}
 
 
 
@@ -1253,10 +1265,57 @@ int CGameFrameWork::InitSocket() {
 	}
 	process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
 
-	//this_thread::sleep_for(100s);
-
-
 
 	return 0;
 
+}
+//Send 
+
+void CGameFrameWork::EnterRoom() {
+	CS_LOGIN_PACKET p;
+	p.size = sizeof(CS_LOGIN_PACKET);
+	p.type = CS_LOGIN;
+	strcpy(p.name, m_NickName.c_str());
+	p.name[m_NickName.length()] = '\0';
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_LOGIN_PACKET));
+
+	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //닉네임 전송
+
+
+}
+
+
+
+
+void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함수
+{
+	cout << "process_packet called" << endl;
+	switch (packet[1]) {
+	case SC_LOGIN_INFO: {
+		cout << "Recv Login Info Packet Server ! " << endl;
+		SC_LOGIN_INFO_PACKET* p = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(packet);
+		m_myid = p->id;
+		m_OtherPlayer[m_myid].id = p->id;
+		m_OtherPlayer[m_myid].money = p->money;
+		m_OtherPlayer[m_myid].userName = p->userName;
+
+
+
+		break;
+	}
+	}
+}
+
+void CGameFrameWork::PrintPlayerInfo(int c_id)
+{
+	std::string DebugPlayerInfo = "\n====정보 출력==== \n";
+	DebugPlayerInfo += "이름: ";
+	DebugPlayerInfo += m_OtherPlayer[c_id].userName;
+	DebugPlayerInfo += "\n";
+
+	DebugPlayerInfo += "아이디: ";
+	DebugPlayerInfo += to_string(m_OtherPlayer[c_id].id);
+	DebugPlayerInfo += "\n";
+
+	OutputDebugStringA(DebugPlayerInfo.c_str());
 }
