@@ -795,14 +795,13 @@ void CGameFrameWork::FrameAdvance() {
 	//서버 받는 곳
 	if (m_conneted) {
 		int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
-		if (recvLen <= 0)
-		{
-			int errCode = ::WSAGetLastError();
-			cout << "Bind ErrorCode : " << errCode << endl;
+		if (::WSAGetLastError() == WSAEWOULDBLOCK) {
+
 		}
-		
-		process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
-		
+		else {
+
+			process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
+		}
 	}
 
 
@@ -1235,8 +1234,13 @@ int CGameFrameWork::InitSocket() {
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 		return 1;
 
+
 	// 소켓 생성
 	m_ServerSocket = ::socket(AF_INET, SOCK_STREAM, 0);
+
+	u_long on = 1;
+	if (::ioctlsocket(m_ServerSocket, FIONBIO, &on) == INVALID_SOCKET)
+		return 0;
 
 
 	// connect()
@@ -1246,17 +1250,32 @@ int CGameFrameWork::InitSocket() {
 	inet_pton(AF_INET, SERVERIP, &serveraddr.sin_addr);
 	serveraddr.sin_port = htons(PORT_NUM);
 
-	retval = connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
-	if (retval) {
-		TCHAR temp[256];
-		int errCode = ::WSAGetLastError();
-		//std::to_wstring(errCode);
+	//retval = connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
+	//if (retval) {
+	//	TCHAR temp[256];
+	//	int errCode = ::WSAGetLastError();
+	//	//std::to_wstring(errCode);
 
-		//_stprintf_s(temp, 256, _T(std::to_string(errCode)));
-		OutputDebugString(std::to_wstring(errCode).c_str());
-		
+	//	//_stprintf_s(temp, 256, _T(std::to_string(errCode)));
+	//	OutputDebugString(std::to_wstring(errCode).c_str());
+	//	
+	//}
+
+	while (true)
+	{
+		if (::connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == SOCKET_ERROR)
+		{
+			// 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
+			if (::WSAGetLastError() == WSAEWOULDBLOCK)
+				continue;
+
+			// 이미 연결된 상태라면 break;
+			if (::WSAGetLastError() == WSAEISCONN)
+				break;
+
+
+		}
 	}
-
 
 
 	//입력한 닉네임 전송.

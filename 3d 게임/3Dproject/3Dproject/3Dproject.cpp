@@ -60,9 +60,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
         else {
             gGameFramework.FrameAdvance();
-            if (gGameFramework.m_conneted) {
-                OutputDebugStringA(string("값 출력").c_str());
-            }
+
         }
     }
 
