@@ -54,6 +54,12 @@ struct CS_READY_PACKET {																															// C -> S 레디 패킷
 	bool			ready;
 };
 
+struct CS_ENTER_ROOM_PACKET {																														// C -> S 방 입장 패킷
+	unsigned char	size;
+	char			type;
+	int				color;
+};
+
 struct SC_LOGIN_INFO_PACKET {																														// S -> C 로그인 정보 패킷
 	unsigned char	size;
 	char			type;
@@ -119,6 +125,15 @@ struct SC_READY_PACKET {
 	char			type;
 	short			id;
 	bool			ready;
+};
+
+struct SC_ENTER_ROOM_PACKET {
+	unsigned char	size;
+	char			type;
+	short			id;
+	char			name[NAME_SIZE];
+	int				color;
+	int				pos_num;
 };
 
 #pragma pack (pop)
