@@ -594,12 +594,13 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 						case READY_BUTTON:
 							if (m_ready) {
 								m_ready = false;
+								SendReadyState();
 							}
 							else {
 								m_ready = true;
+								SendReadyState();
 							}
-							
-							m_GameState = PlayStage;		// 서진이가 알아서 수정
+							//m_GameState = PlayStage;		// 서진이가 알아서 수정
 							break;
 						}
 					}
@@ -1290,6 +1291,7 @@ int CGameFrameWork::InitSocket() {
 	
 
 	
+	
 	return 0;
 
 }
@@ -1306,6 +1308,15 @@ void CGameFrameWork::EnterRoom() {
 
 }
 
+void CGameFrameWork::SendReadyState() {
+	//레디 상태 전송.
+	CS_READY_PACKET r;
+	r.size = sizeof(CS_READY_PACKET);
+	r.type = CS_READY;
+	r.ready = m_ready;
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&r), sizeof(CS_LOGIN_PACKET));
+	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //레디 상태 전송
+}
 
 
 
@@ -1335,6 +1346,13 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		PrintPlayerInfo(p->id);
 		break;
 	}
+	case SC_READY: {
+		SC_READY_PACKET* p = reinterpret_cast<SC_READY_PACKET*>(packet);
+		m_OtherPlayer[p->id].id = p->id;
+		m_OtherPlayer[p->id].ready = p->ready;
+		break;
+	}
+
 	}
 }
 

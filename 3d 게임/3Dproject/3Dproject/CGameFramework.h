@@ -182,4 +182,6 @@ public:
 
 	//print Player Info
 	void PrintPlayerInfo(int c_id);
+	//레디상태 전송
+	void SendReadyState();
 };
