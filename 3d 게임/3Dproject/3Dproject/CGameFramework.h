@@ -173,7 +173,7 @@ public:
 	CGameObject* m_pSelectedObject = NULL;
 
 	bool					m_ready = false;
-	Color					m_color;
+	Color					m_color = blue;
 	std::string				m_NickName = "seojin";								//PlayName
 
 	bool	m_conneted = false;

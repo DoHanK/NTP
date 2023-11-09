@@ -551,11 +551,6 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 					if (p.first->left < x && x < p.first->right) {
 
 						switch (p.first->purpose) {
-							//초기 스테이지 시작 화면
-						//case LOGIN_BUTTON: //로그인 버튼     로그인 -> 레디스테이지로 이동
-						//	m_GameState = ReadyStage;
-						//	m_NickName = KeyInputBuffer;
-						//	break;
 						case  MULTI_BUTTON:  //ReadyStage-> 레디버튼과, 서버에 연결
 
 							m_GameState = ReadyStage;
@@ -1350,6 +1345,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		SC_READY_PACKET* p = reinterpret_cast<SC_READY_PACKET*>(packet);
 		m_OtherPlayer[p->id].id = p->id;
 		m_OtherPlayer[p->id].ready = p->ready;
+		if (p->id == m_myid) { //내 정보만 일단 출력
+			PrintPlayerInfo(p->id);
+		}
 		break;
 	}
 
