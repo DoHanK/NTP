@@ -181,7 +181,7 @@ public:
 	void process_packet(int c_id, char* packet);
 
 	//print Player Info
-	void PrintPlayerInfo(int c_id);
+	void PrintPlayerInfo(std::string s, int c_id);
 	//레디상태 전송
 	void SendReadyState();
 };

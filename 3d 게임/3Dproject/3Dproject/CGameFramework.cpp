@@ -1331,7 +1331,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[m_myid].money = p->money;
 		m_OtherPlayer[m_myid].userName = p->userName;
 
-			PrintPlayerInfo(p->id);
+		PrintPlayerInfo("로그인 성공 ",p->id);
 		
 		break; 
 	}
@@ -1343,7 +1343,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[p->id].color = p->color;
 		m_OtherPlayer[p->id].pos_num = p->pos_num;
 
-			PrintPlayerInfo(p->id);
+		PrintPlayerInfo("방입장 성공",p->id);
 		
 		break;
 	}
@@ -1352,7 +1352,8 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[p->id].id = p->id;
 		m_OtherPlayer[p->id].ready = p->ready;
 	
-		PrintPlayerInfo(p->id);
+	
+		PrintPlayerInfo("레디상태",p->id);
 		
 		break;
 	}
@@ -1360,9 +1361,11 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 	}
 }
 
-void CGameFrameWork::PrintPlayerInfo(int c_id)
+void CGameFrameWork::PrintPlayerInfo(std::string s ,int c_id)
 {
-	std::string DebugPlayerInfo = "\n====정보 출력==== \n";
+	std::string DebugPlayerInfo = "\n===";
+	DebugPlayerInfo += s;
+	DebugPlayerInfo += "===\n";
 	DebugPlayerInfo += "이름: ";
 	DebugPlayerInfo += m_OtherPlayer[c_id].userName;
 	DebugPlayerInfo += "\n";
