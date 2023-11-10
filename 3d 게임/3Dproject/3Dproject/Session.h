@@ -6,7 +6,7 @@
 using namespace std;
 
 
-#define SERVERIP "127.0.0.1"
+#define SERVERIP "192.168.82.92"
 
 
 void PrintVal(int c_id);

@@ -1330,7 +1330,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[m_myid].id = p->id;
 		m_OtherPlayer[m_myid].money = p->money;
 		m_OtherPlayer[m_myid].userName = p->userName;
-		PrintPlayerInfo(m_myid);
+
+			PrintPlayerInfo(p->id);
+		
 		break; 
 	}
 	case SC_ENTER_ROOM:{
@@ -1341,16 +1343,17 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[p->id].color = p->color;
 		m_OtherPlayer[p->id].pos_num = p->pos_num;
 
-		PrintPlayerInfo(p->id);
+			PrintPlayerInfo(p->id);
+		
 		break;
 	}
 	case SC_READY: {
 		SC_READY_PACKET* p = reinterpret_cast<SC_READY_PACKET*>(packet);
 		m_OtherPlayer[p->id].id = p->id;
 		m_OtherPlayer[p->id].ready = p->ready;
-		if (p->id == m_myid) { //내 정보만 일단 출력
-			PrintPlayerInfo(p->id);
-		}
+	
+		PrintPlayerInfo(p->id);
+		
 		break;
 	}
 
