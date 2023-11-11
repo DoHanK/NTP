@@ -598,7 +598,7 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 								m_ready = true;
 								SendReadyState();
 							}
-							//m_GameState = PlayStage;		// 서진이가 알아서 수정
+			
 							break;
 						}
 					}
@@ -743,8 +743,9 @@ void CGameFrameWork::ProcessInput() {
 
 void CGameFrameWork::AnimateObjects() {
 
+	int timer = m_GameTimer.GetTimeElapsed();
 	if(m_GameState == PlayStage)
-		if (m_pScene) m_pScene->AnimateObjects(m_GameTimer.GetTimeElapsed());
+		if (m_pScene) m_pScene->AnimateObjects(timer);
 	if (m_GameState == CustomStage) {
 
 		XMFLOAT3 xmf3Up = m_pPlayer->GetUpVector();
@@ -770,6 +771,14 @@ void CGameFrameWork::AnimateObjects() {
 
 		m_pCamera->RegenerateViewMatrix();
 
+	}
+
+	if (m_GameState == ReadyStage) {
+		for (int i = 0; i < MAX_USER; ++i) {
+			if (m_OtherPlayer[i].timer < 1000) {
+				m_OtherPlayer[i].timer += timer;
+			}
+		}
 	}
 }
 
@@ -1000,7 +1009,6 @@ void CGameFrameWork::Makemulticustomebutton() {
 	m_pUIManager->CreateUIRect(0, FRAME_BUFFER_HEIGHT, 0, FRAME_BUFFER_WIDTH, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/StartStage.dds"));
 }
 
-
 void CGameFrameWork::MakeInitButton()
 {
 	if (m_pMeshManager && m_pUIManager) {
@@ -1081,7 +1089,6 @@ void CGameFrameWork::MakeCustomButton()
 
 void CGameFrameWork::MakeEndButton()
 {	
-
 	m_pUIManager->CreateUIRect(0, FRAME_BUFFER_HEIGHT,0, FRAME_BUFFER_WIDTH, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/EnddingMassage.dds"));
 
 	m_pUIManager->CreateUIRect_Func(600, 700, FRAME_BUFFER_WIDTH/2-100, FRAME_BUFFER_WIDTH/2+100, EXIT_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/EXITBt.dds"), NULL);
@@ -1093,32 +1100,13 @@ void CGameFrameWork::MakeLoginButton() {
 	for (int i = 0; i < NameBufferSize - 1; i++)
 	{
 		m_pUIManager->CreateUIRect(480, 510, 220 + 25 * i, 250 + 25 * i, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/Alphabet/a.dds"));
-		//m_pUIManager->CreateUIRect(485, 515, 310 , 330, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/alpha.dds"));
 	}
-	//알파벳
-	//m_pUIManager->CreateUIRect(450, 750, 320, 370, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/Alphabet/a.dds"));
-	//
-	//m_pUIManager->CreateUIRect_Func(480, 520, 810, 1010, LOGIN_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/loginBT.dds"), NULL);
-	//m_pUIManager->CreateUIRect(420, 570, 100, 300, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/nicknameLB.dds"));
-	//m_pUIManager->CreateUIRect(480, 520, 310, 800, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/LoginResource/Green.dds"));
-	//m_pUIManager->CreateUIRect(0, FRAME_BUFFER_HEIGHT, 0, FRAME_BUFFER_WIDTH, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/StartStage.dds"));
+	
 
 }
 void CGameFrameWork::MakeReadyStage() {
 
 
-
-	//닉네임 6 사이즈로 고정 * 3player
-
-	//for (int i = 0; i < NameBufferSize-1; i++) {
-	//		if (m_NickName[i] == '\0')
-	//			break;
-	//	std::string filetemp = "Texture/Alphabet/";
-	//	filetemp += m_NickName[i];
-	//	filetemp += ".dds";
-	//	// 알파벳 간격 -> 세로 간격:30,가로 간격:25
-	//	m_pUIManager->CreateUIRect(90, 120, 460 + 25 * i, 485 + 25 * i, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, filetemp.c_str()));
-	//}
 
 
 	//0Rect
@@ -1171,20 +1159,30 @@ void CGameFrameWork::MakeReadyStage() {
 
 
 }
-
+// 플레이어 정보를 토대로 텍스쳐 채워넣기
 void CGameFrameWork::AddPlayerReadyStage(int id)
 {
 	//닉네임 입력
 	for (int i = 0; i < NameBufferSize - 1; i++) {
-		if (m_NickName[i] == '\0')
+		if (m_OtherPlayer[id].userName[i] == '\0')
 			break;
 		std::string filetemp = "Texture/Alphabet/";
-		filetemp += m_NickName[i];
+		filetemp += m_OtherPlayer[id].userName[i];
 		filetemp += ".dds";
 		// 알파벳 간격 -> 세로 간격:30,가로 간격:25
-		m_pUIManager->RectList[id * 6 + i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, filetemp.c_str());
+		m_pUIManager->RectList[m_OtherPlayer[id].pos_num * 6 + i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, filetemp.c_str());
 	}
 	//레디상태
+	{
+		std::string filetemp = "Texture/readystage/";
+		if (m_OtherPlayer[id].ready)
+			filetemp += "ready.dds";
+		else
+			filetemp += "alpha.dds";
+		std::string inputdate = filetemp;
+		m_pUIManager->RectList[18 + m_OtherPlayer[id].pos_num].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, inputdate.c_str());
+	}
+	//컬러색깔
 	{
 		std::string filetemp = "Texture/readystage/";
 		if (m_OtherPlayer[id].color == red)
@@ -1193,21 +1191,29 @@ void CGameFrameWork::AddPlayerReadyStage(int id)
 			filetemp += "green.dds";
 		else if (m_OtherPlayer[id].color == blue)
 			filetemp += "blue.dds";
-		else if (m_OtherPlayer[id].color == yellow)
+		else  
 			filetemp += "yellow.dds";
 
-		m_pUIManager->RectList[18 + id].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, filetemp.c_str());
+		std::string inputdate = filetemp;
+		m_pUIManager->RectList[21 + m_OtherPlayer[id].pos_num].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, inputdate.c_str());
 
 	}
-	//컬러색깔
-	{
+
+}
+//레디 버트만 처리
+void CGameFrameWork::ChangePlayerReadyStage(int id)
+{
+
+
 		std::string filetemp = "Texture/readystage/";
 		if (m_OtherPlayer[id].ready)
 			filetemp += "ready.dds";
 		else
 			filetemp += "alpha.dds";
-		m_pUIManager->RectList[21 + id].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, filetemp.c_str());
-	}
+		std::string inputdate = filetemp;
+		m_pUIManager->RectList[18 + m_OtherPlayer[id].pos_num].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, inputdate.c_str());
+		m_OtherPlayer[id].timer = 0;
+	
 
 }
 
@@ -1413,9 +1419,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[p->id].userName = p->name;
 		m_OtherPlayer[p->id].color = p->color;
 		m_OtherPlayer[p->id].pos_num = p->pos_num;
-
+		PrintPlayerInfo("방입장 성공", p->id);
 		AddPlayerReadyStage(p->id);
-		PrintPlayerInfo("방입장 성공",p->id);
+		//PrintPlayerInfo("방입장 성공",p->id);
 
 		break;
 	}
@@ -1424,7 +1430,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[p->id].id = p->id;
 		m_OtherPlayer[p->id].ready = p->ready;
 	
-	
+		ChangePlayerReadyStage(p->id);
 		PrintPlayerInfo("레디상태",p->id);
 
 		break;

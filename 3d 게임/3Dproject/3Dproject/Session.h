@@ -7,7 +7,7 @@ using namespace std;
 
 
 #define SERVERIP "127.0.0.1"
-
+#define READYDELAY 1
 
 void PrintVal(int c_id);
 class Status {
@@ -70,6 +70,7 @@ public:
 	char			sendBuffer[BUF_SIZE];
 	int				sendLen;
 	bool			error;
+	int				timer; //delay ¼³Á¤
 
 public:
 	SESSION() : socket(0), in_use(false)
