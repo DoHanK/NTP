@@ -206,16 +206,21 @@ void process_packet(int c_id, char* packet)
 		}
 		clients[c_id].color = p->color;
 		
+		std::cout << "입장 플레이어 정보 전송" << std::endl;
 		for (auto &pl : clients) {
 			if (pl.in_use == false)
 				continue;
 			if (pl.id == c_id)
 				continue;
+			std::cout << pl.id << "에게" << c_id << "의 정보 전송" << std::endl;
 			pl.send_enter_room_packet(c_id);
 		}
+		std::cout << "입장플레이어에게 정보 전송"<<std::endl;
 		for (int i = 0; i < room.size();  ++i) {
-			if (room[i] != -1)
+			if (room[i] != -1) {
+				std::cout << room[i] <<"에게"<< std::endl;
 				clients[c_id].send_enter_room_packet(room[i]);
+			}
 		}
 		break;
 	}

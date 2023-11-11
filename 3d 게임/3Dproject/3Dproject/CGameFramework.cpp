@@ -48,6 +48,7 @@ CGameFrameWork::CGameFrameWork() {
 
 }
 CGameFrameWork::~CGameFrameWork() {
+	t1.join();
 	// 소켓 리소스 반환
 	::closesocket(m_ServerSocket);
 	// 윈속 종료
@@ -368,6 +369,7 @@ void CGameFrameWork::BuildObjects() {
 		std::string addr = "Texture/Alphabet/";
 		addr += 'a' + i;
 		addr += ".dds";
+
 		m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, addr.c_str());
 	}
 
@@ -800,17 +802,7 @@ void CGameFrameWork::WaitForGpuComplete() {
 //#define _WITH_PLAYER_TOP
 void CGameFrameWork::FrameAdvance() {
 
-	//서버 받는 곳
-	if (m_conneted) {
-		int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
-		if (::WSAGetLastError() == WSAEWOULDBLOCK) {
 
-		}
-		else {
-
-			process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
-		}
-	}
 
 
 
@@ -1300,6 +1292,32 @@ CD3DX12_GPU_DESCRIPTOR_HANDLE* CGameFrameWork::GeneratorNumTex(int num)
 	}
 
 }
+DWORD WINAPI CGameFrameWork::RecvServerData()
+{
+	//서버 받는 곳
+
+		if (m_setrevdaterate > SERVERTICK) { // serverTick당 1번 통신
+
+
+			while (1) {
+				int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
+	
+				if(recvLen>0) {
+					process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
+					
+				}
+		
+			}
+			m_setrevdaterate = 0;
+		}
+	
+	m_setrevdaterate++;
+	closesocket(m_ServerSocket);
+
+	return 0;
+
+
+}
 
 //로그인 시도 및 서버와 연결 시도.
 int CGameFrameWork::InitSocket() {
@@ -1314,9 +1332,9 @@ int CGameFrameWork::InitSocket() {
 	// 소켓 생성
 	m_ServerSocket = ::socket(AF_INET, SOCK_STREAM, 0);
 
-	u_long on = 1;
-	if (::ioctlsocket(m_ServerSocket, FIONBIO, &on) == INVALID_SOCKET)
-		return 0;
+	//u_long on = 1;
+	//if (::ioctlsocket(m_ServerSocket, FIONBIO, &on) == INVALID_SOCKET)
+	//	return 0;
 
 
 	// connect()
@@ -1337,21 +1355,10 @@ int CGameFrameWork::InitSocket() {
 	//	
 	//}
 
-	while (true)
-	{
-		if (::connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == SOCKET_ERROR)
-		{
-			// 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
-			if (::WSAGetLastError() == WSAEWOULDBLOCK)
-				continue;
 
-			// 이미 연결된 상태라면 break;
-			if (::WSAGetLastError() == WSAEISCONN)
-				break;
+	::connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) ;
 
-
-		}
-	}
+	t1 = thread([this]() {this->RecvServerData(); });
 
 
 	//입력한 닉네임 전송.
@@ -1372,6 +1379,7 @@ int CGameFrameWork::InitSocket() {
 }
 //Send 
 
+
 void CGameFrameWork::EnterRoom() {
 	CS_ENTER_ROOM_PACKET p;
 	p.size = sizeof(CS_ENTER_ROOM_PACKET);
@@ -1379,7 +1387,6 @@ void CGameFrameWork::EnterRoom() {
 	p.color = m_color;
 	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_ENTER_ROOM_PACKET));
 	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //방입장 패킷 전송
-
 
 }
 
@@ -1419,9 +1426,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_OtherPlayer[p->id].userName = p->name;
 		m_OtherPlayer[p->id].color = p->color;
 		m_OtherPlayer[p->id].pos_num = p->pos_num;
-		PrintPlayerInfo("방입장 성공", p->id);
 		AddPlayerReadyStage(p->id);
-		//PrintPlayerInfo("방입장 성공",p->id);
+	
+		PrintPlayerInfo("방입장 성공", p->id);
 
 		break;
 	}
