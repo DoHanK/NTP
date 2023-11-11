@@ -209,8 +209,6 @@ void process_packet(int c_id, char* packet)
 		for (auto &pl : clients) {
 			if (pl.in_use == false)
 				continue;
-			if (pl.id == c_id)
-				continue;
 			pl.send_enter_room_packet(c_id);
 		}
 		for (int i = 0; i < room.size();  ++i) {
