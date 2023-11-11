@@ -189,8 +189,6 @@ void process_packet(int c_id, char* packet)
 		for (auto &pl : clients) {
 			if (pl.in_use == false)
 				continue;
-			if (pl.id == clients[c_id].id)
-				continue;
 			pl.send_ready_packet(c_id);
 		}
 	}
