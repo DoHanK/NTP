@@ -19,7 +19,7 @@ using namespace std;
 void process_packet(int c_id, char* packet);
 
 
-array<int, 4> room;
+array<int, 3> room;
 
 
 class Status {
