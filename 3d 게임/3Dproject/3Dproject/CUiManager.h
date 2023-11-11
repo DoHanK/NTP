@@ -12,7 +12,7 @@ class CUiManager
 {
 public:
 
-	list<pair<UIRect*, CD3DX12_GPU_DESCRIPTOR_HANDLE*>> RectList;
+	vector<pair<UIRect*, CD3DX12_GPU_DESCRIPTOR_HANDLE*>> RectList;
 	list<pair<UIRect*, bool(*)(void*)>> FunctionList;
 	vector<CUiRectMesh*> m_pMesh;
 

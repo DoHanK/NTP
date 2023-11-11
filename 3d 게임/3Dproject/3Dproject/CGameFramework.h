@@ -153,6 +153,7 @@ public:
 	void ShowInputName();
 	void Makemulticustomebutton();
 	void MakeReadyStage();
+	void AddPlayerReadyStage(int id);
 	void do_send(void* packet)																																// 데이터 송신
 	{
 		sendLen = int(reinterpret_cast<char*>(packet)[0]);
