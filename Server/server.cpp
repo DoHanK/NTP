@@ -191,6 +191,7 @@ void process_packet(int c_id, char* packet)
 				continue;
 			pl.send_ready_packet(c_id);
 		}
+		break;
 	}
 	case CS_ENTER_ROOM: {
 		cout << "Recv Enter Room Packet From Client Num : " << c_id << endl;
@@ -213,6 +214,7 @@ void process_packet(int c_id, char* packet)
 			if (room[i] != 0)
 				clients[c_id].send_enter_room_packet(room[i] - 1);
 		}
+		break;
 	}
 	}
 }
