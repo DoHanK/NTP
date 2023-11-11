@@ -19,7 +19,7 @@ using namespace std;
 void process_packet(int c_id, char* packet);
 
 
-array<int, 3> room;
+array<int, 3> room{ -1,-1,-1 };
 
 
 class Status {
@@ -103,7 +103,7 @@ public:
 			int errCode = ::WSAGetLastError();
 			cout << "Bind ErrorCode : " << errCode << endl;
 			error = true;
-			room[pos_num] = 0;
+			room[pos_num] = -1;
 			return;
 		}
 		process_packet(id, recvBuffer);
@@ -198,21 +198,24 @@ void process_packet(int c_id, char* packet)
 
 		CS_ENTER_ROOM_PACKET* p = reinterpret_cast<CS_ENTER_ROOM_PACKET*>(packet);
 		for (int i = 0; i < room.size(); ++i) {
-			if (room[i] == 0) {
-				room[i] = c_id + 1;
+			if (room[i] == -1) {
+				room[i] = c_id;
 				clients[c_id].pos_num = i;
 				break;
 			}
 		}
 		clients[c_id].color = p->color;
+		
 		for (auto &pl : clients) {
 			if (pl.in_use == false)
+				continue;
+			if (pl.id == c_id)
 				continue;
 			pl.send_enter_room_packet(c_id);
 		}
 		for (int i = 0; i < room.size();  ++i) {
-			if (room[i] != 0)
-				clients[c_id].send_enter_room_packet(room[i] - 1);
+			if (room[i] != -1)
+				clients[c_id].send_enter_room_packet(room[i]);
 		}
 		break;
 	}
