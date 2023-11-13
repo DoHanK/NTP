@@ -177,12 +177,11 @@ public:
 	bool					m_ready = false;
 	Color					m_color = blue;
 	std::string				m_NickName = "seojin";								//PlayName
-	thread t1;
+
 	bool	m_conneted = false;
-	int	 m_setrevdaterate = 0;
 	//Recv정보 처리 함수
 	void process_packet(int c_id, char* packet);
-	DWORD WINAPI RecvServerData();
+
 	//print Player Info
 	void PrintPlayerInfo(std::string s, int c_id);
 	//레디상태 전송

@@ -8,7 +8,7 @@ using namespace std;
 
 #define SERVERIP "127.0.0.1"
 #define READYDELAY 1
-#define SERVERTICK 30
+
 void PrintVal(int c_id);
 class Status {
 private:
