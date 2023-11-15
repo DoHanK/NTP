@@ -82,6 +82,8 @@ public:
 	int				sendLen;
 	bool			error;
 	int				pos_num;
+	int				remainLen;
+	char			remainBuffer[BUF_SIZE];
 	mutex m;
 public:
 	SESSION() : socket(0), in_use(false)
@@ -90,14 +92,17 @@ public:
 		status.change_pos({ 0.f, 0.f, 0.f });
 		status.change_top_dir({ 0.f, 0.f, 0.f });
 		status.change_bottom_dir({ 0.f, 0.f, 0.f });
+		remainLen = 0;
 		ready = false;
+		memset(remainBuffer, 0, sizeof(remainBuffer));
 	}
 
 	~SESSION() {}
 
 	void do_recv()																																			// 데이터 수신
 	{
-		recvLen = ::recv(socket, recvBuffer, BUF_SIZE, MSG_WAITALL);
+		recvLen = ::recv(socket, recvBuffer, BUF_SIZE, 0);
+
 		if (recvLen <= 0)
 		{
 			int errCode = ::WSAGetLastError();
@@ -106,7 +111,24 @@ public:
 			room[pos_num] = -1;
 			return;
 		}
-		process_packet(id, recvBuffer);
+
+		int remain_data = recvLen + remainLen;
+		char* p = remainBuffer;
+		while (remain_data > 0) {
+			int packet_size = p[0];
+			if (packet_size <= 0)
+				break;
+			if (packet_size <= remain_data) {
+				process_packet(id, p);
+				p = p + packet_size;
+				remain_data = remain_data - packet_size;
+			}
+			else break;
+		}
+		remainLen = remain_data;
+		if (remain_data > 0) {
+			memcpy(remainBuffer, p, remain_data);
+		}
 	}
 
 	void do_send(void* packet)																																// 데이터 송신
