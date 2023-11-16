@@ -76,14 +76,14 @@ public:
 	int				money;
 	std::string		userName;
 	bool			ready;
-	char			recvBuffer[BUF_SIZE ];
+	char			recvBuffer[BUF_SIZE];
 	int				recvLen;
 	char			sendBuffer[BUF_SIZE];
 	int				sendLen;
 	bool			error;
 	int				pos_num;
 	int				remainLen;
-	char			remainBuffer[BUF_SIZE];
+	char			remainBuffer[BUF_SIZE*2];
 	mutex m;
 public:
 	SESSION() : socket(0), in_use(false)
@@ -111,13 +111,11 @@ public:
 			room[pos_num] = -1;
 			return;
 		}
-
+		memcpy(remainBuffer + remainLen, recvBuffer, recvLen);
 		int remain_data = recvLen + remainLen;
 		char* p = remainBuffer;
 		while (remain_data > 0) {
 			int packet_size = p[0];
-			if (packet_size <= 0)
-				break;
 			if (packet_size <= remain_data) {
 				process_packet(id, p);
 				p = p + packet_size;
