@@ -612,6 +612,7 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 		if (m_PreGameState != m_GameState) {
 			m_pUIManager->DeleteAllRect();
 			m_pScoreManager->DeleteAllRect();
+
 			switch (m_GameState) {
 			case PlayStage:
 				MakePlayButton();
@@ -628,8 +629,8 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 
 				break;
 			case ReadyStage:// 여기에서 윈소켓 Init과 Connect 해결
-				EnterRoom();
 				MakeReadyStage();
+				EnterRoom();
 				break;
 			}
 
@@ -800,31 +801,6 @@ void CGameFrameWork::WaitForGpuComplete() {
 //#define _WITH_PLAYER_TOP
 void CGameFrameWork::FrameAdvance() {
 
-	//서버 받는 곳
-	if (m_conneted) {
-		int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
-		if (::WSAGetLastError() == WSAEWOULDBLOCK) {
-
-		}
-		else {
-			memcpy(m_RemainBuffer + remainLen, m_RecvBuffer, recvLen);
-			int remain_data = recvLen + remainLen;
-			char* p = m_RemainBuffer;
-			while (remain_data > 0) {
-				int packet_size = p[0];
-				if (packet_size <= remain_data) {
-					process_packet(0, p);
-					p = p + packet_size;
-					remain_data = remain_data - packet_size;
-				}
-				else break;
-			}
-			remainLen = remain_data;
-			if (remain_data > 0) {
-				memcpy(m_RemainBuffer, p, remain_data);
-			}
-		}
-	}
 
 
 
@@ -885,9 +861,36 @@ void CGameFrameWork::FrameAdvance() {
 #endif
 
 
+
+	//서버 받는 곳
+	if (m_conneted) {
+		int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
+		if (::WSAGetLastError() == WSAEWOULDBLOCK) {
+
+		}
+		else {
+			memcpy(m_RemainBuffer + remainLen, m_RecvBuffer, recvLen);
+			int remain_data = recvLen + remainLen;
+			char* p = m_RemainBuffer;
+			while (remain_data > 0) {
+				int packet_size = p[0];
+				if (packet_size <= remain_data) {
+					process_packet(0, p);
+					p = p + packet_size;
+					remain_data = remain_data - packet_size;
+				}
+				else break;
+			}
+			remainLen = remain_data;
+			if (remain_data > 0) {
+				memcpy(m_RemainBuffer, p, remain_data);
+			}
+		}
+	}
+
 	
 	if (m_GameState == PlayStage)
-		{
+	{
 			AnimateObjects();
 			ProcessInput();
 			ChangeScore();
@@ -1430,15 +1433,17 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 	}
 	case SC_ENTER_ROOM:{
 
-		SC_ENTER_ROOM_PACKET* p = reinterpret_cast<SC_ENTER_ROOM_PACKET*>(packet);
-		m_OtherPlayer[p->id].id = p->id;
-		m_OtherPlayer[p->id].userName = p->name;
-		m_OtherPlayer[p->id].color = p->color;
-		m_OtherPlayer[p->id].pos_num = p->pos_num;
-		PrintPlayerInfo("방입장 성공", p->id);
-		AddPlayerReadyStage(p->id);
-		//PrintPlayerInfo("방입장 성공",p->id);
+		if (m_GameState == ReadyStage) {
+			SC_ENTER_ROOM_PACKET* p = reinterpret_cast<SC_ENTER_ROOM_PACKET*>(packet);
+			m_OtherPlayer[p->id].id = p->id;
+			m_OtherPlayer[p->id].userName = p->name;
+			m_OtherPlayer[p->id].color = p->color;
+			m_OtherPlayer[p->id].pos_num = p->pos_num;
+			PrintPlayerInfo("방입장 성공", p->id);
 
+			AddPlayerReadyStage(p->id);
+			//PrintPlayerInfo("방입장 성공",p->id);
+		}
 		break;
 	}
 	case SC_READY: {
