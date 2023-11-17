@@ -18,8 +18,9 @@ using namespace std;
 
 void process_packet(int c_id, char* packet);
 
-
+mutex m;
 array<int, 3> room{ -1,-1,-1 };
+int Ready_Player = 0;
 
 
 class Status {
@@ -84,7 +85,6 @@ public:
 	int				pos_num;
 	int				remainLen;
 	char			remainBuffer[BUF_SIZE*2];
-	mutex m;
 public:
 	SESSION() : socket(0), in_use(false)
 	{
@@ -160,6 +160,7 @@ public:
 	void send_attack_packet(int c_id);
 	void send_dead_packet(int c_id);
 	void send_hitted_packet(int c_id);
+	void send_game_start_packet();
 };
 
 array<SESSION, MAX_USER> clients;																												// 클라이언트 배열 생성
@@ -185,6 +186,14 @@ void SESSION::send_enter_room_packet(int c_id)
 	do_send(&p);
 }
 
+void SESSION::send_game_start_packet()
+{
+	SC_GAME_START_PACKET p;
+	p.size = sizeof(SC_GAME_START_PACKET);
+	p.type = SC_GAME_START;
+	do_send(&p);
+}
+
 
 void process_packet(int c_id, char* packet)
 {
@@ -202,14 +211,32 @@ void process_packet(int c_id, char* packet)
 	case CS_READY: {
 		CS_READY_PACKET* p = reinterpret_cast<CS_READY_PACKET*>(packet);
 		if (clients[c_id].ready)
+		{
 			clients[c_id].ready = false;
+			m.lock();
+			Ready_Player--;
+			m.unlock();
+		}
 		else
+		{
 			clients[c_id].ready = true;
+			m.lock();
+			Ready_Player++;
+			m.unlock();
+		}
 
 		for (auto &pl : clients) {
 			if (pl.in_use == false)
 				continue;
 			pl.send_ready_packet(c_id);
+		}
+
+		if (Ready_Player == 3) {
+			for (auto& pl : clients) {
+				if (pl.in_use == false)
+					continue;
+				pl.send_game_start_packet();
+			}
 		}
 		break;
 	}

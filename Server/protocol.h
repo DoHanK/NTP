@@ -19,6 +19,7 @@ constexpr char SC_REMOVE_PLAYER = 4;
 constexpr char SC_MOVE_PLAYER = 5;
 constexpr char SC_READY = 6;
 constexpr char SC_ENTER_ROOM = 7;
+constexpr char SC_GAME_START = 8;
 
 #pragma pack (push, 1)
 struct CS_LOGIN_PACKET {																															// C -> S 로그인 패킷
@@ -136,6 +137,11 @@ struct SC_ENTER_ROOM_PACKET {
 	char			name[NAME_SIZE];
 	int				color;
 	int				pos_num;
+};
+
+struct SC_GAME_START_PACKET {
+	unsigned char	size;
+	char			type;
 };
 
 #pragma pack (pop)
