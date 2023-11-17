@@ -784,7 +784,7 @@ void CGameFrameWork::AnimateObjects() {
 
 void CGameFrameWork::WaitForGpuComplete() {
 
-
+	
 	//cpu 펜스의 값을 증가한다.
 	
 	UINT64 nFenceValue = ++m_nFenceValues[m_nSwapChainBufferIndex];
@@ -1362,7 +1362,7 @@ int CGameFrameWork::InitSocket() {
 	p.name[m_NickName.length()] = '\0';
 	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_LOGIN_PACKET));
 
-	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //닉네임 전송
+	send(m_ServerSocket, m_SendBuffer,p.size, 0); //닉네임 전송
 	
 
 	
@@ -1378,19 +1378,19 @@ void CGameFrameWork::EnterRoom() {
 	p.type = CS_ENTER_ROOM;
 	p.color = m_color;
 	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_ENTER_ROOM_PACKET));
-	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //방입장 패킷 전송
+	send(m_ServerSocket, m_SendBuffer, p.size, 0); //방입장 패킷 전송
 
 
 }
 
 void CGameFrameWork::SendReadyState() {
 	//레디 상태 전송.
-	CS_READY_PACKET r;
-	r.size = sizeof(CS_READY_PACKET);
-	r.type = CS_READY;
-	r.ready = m_ready;
-	memcpy(m_SendBuffer, reinterpret_cast<char*>(&r), sizeof(CS_LOGIN_PACKET));
-	send(m_ServerSocket, m_SendBuffer, sizeof(m_SendBuffer), 0); //레디 상태 전송
+	CS_READY_PACKET p;
+	p.size = sizeof(CS_READY_PACKET);
+	p.type = CS_READY;
+	p.ready = m_ready;
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_LOGIN_PACKET));
+	send(m_ServerSocket, m_SendBuffer, p.size, 0); //레디 상태 전송
 }
 
 
