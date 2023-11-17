@@ -4,6 +4,8 @@
 #include <vector>
 #include <array>
 #include <mutex>
+#include <cstdlib>
+#include <ctime>
 
 #include <WinSock2.h>
 #include <MSWSock.h>
@@ -19,9 +21,14 @@ using namespace std;
 void process_packet(int c_id, char* packet);
 
 mutex m;
-array<int, 3> room{ -1,-1,-1 };
+array<int, 3> Room{ -1,-1,-1 };
 int Ready_Player = 0;
 
+array<XMFLOAT3, 7> Poses{};
+array<int, 7> Pos_List{-1,-1,-1,-1,-1,-1,-1};
+int RandomNumber;
+
+XMFLOAT3 Default_Pos{0,0,0};
 
 class Status {
 private:
@@ -108,7 +115,7 @@ public:
 			int errCode = ::WSAGetLastError();
 			cout << "Bind ErrorCode : " << errCode << endl;
 			error = true;
-			room[pos_num] = -1;
+			Room[pos_num] = -1;
 			return;
 		}
 		memcpy(remainBuffer + remainLen, recvBuffer, recvLen);
@@ -156,6 +163,7 @@ public:
 	}
 	void send_ready_packet(int c_id);
 	void send_enter_room_packet(int c_id);
+	void send_add_player_packet(int c_id);
 	void send_move_packet(int c_id);
 	void send_attack_packet(int c_id);
 	void send_dead_packet(int c_id);
@@ -183,6 +191,19 @@ void SESSION::send_enter_room_packet(int c_id)
 	strcpy(p.name, clients[c_id].userName.c_str());
 	p.color = clients[c_id].color;
 	p.pos_num = clients[c_id].pos_num;
+	do_send(&p);
+}
+
+void SESSION::send_add_player_packet(int c_id)
+{
+	SC_ADD_PLAYER_PACKET p;
+	p.size = sizeof(SC_ADD_PLAYER_PACKET);
+	p.type = SC_ADD_PLAYER;
+	p.id = c_id;
+	strcpy(p.name, clients[c_id].userName.c_str());
+	p.pos = Poses[c_id];
+	p.top_dir = Default_Pos;
+	p.bottom_dir = Default_Pos;
 	do_send(&p);
 }
 
@@ -237,6 +258,27 @@ void process_packet(int c_id, char* packet)
 					continue;
 				pl.send_game_start_packet();
 			}
+
+			for (auto& pl : clients) {										// 각 클라이언트 생성 위치 지정
+				if (pl.in_use == false)
+					continue;
+				for (;;) {
+					RandomNumber = std::rand() % 7;
+					if (Pos_List[RandomNumber] == -1) {
+						Pos_List[RandomNumber] = pl.id;
+						break;
+					}
+				}
+				pl.status.change_pos(Poses[RandomNumber]);
+			}
+			
+			for (auto& pl : clients) {
+				if (pl.in_use == false)
+					continue;
+				pl.send_add_player_packet(0);
+				pl.send_add_player_packet(1);
+				pl.send_add_player_packet(2);
+			}
 		}
 		break;
 	}
@@ -244,9 +286,9 @@ void process_packet(int c_id, char* packet)
 		cout << "Recv Enter Room Packet From Client Num : " << c_id << endl;
 
 		CS_ENTER_ROOM_PACKET* p = reinterpret_cast<CS_ENTER_ROOM_PACKET*>(packet);
-		for (int i = 0; i < room.size(); ++i) {
-			if (room[i] == -1) {
-				room[i] = c_id;
+		for (int i = 0; i < Room.size(); ++i) {
+			if (Room[i] == -1) {
+				Room[i] = c_id;
 				clients[c_id].pos_num = i;
 				break;
 			}
@@ -260,9 +302,9 @@ void process_packet(int c_id, char* packet)
 				continue;
 			pl.send_enter_room_packet(c_id);
 		}
-		for (int i = 0; i < room.size();  ++i) {
-			if (room[i] != -1)
-				clients[c_id].send_enter_room_packet(room[i]);
+		for (int i = 0; i < Room.size();  ++i) {
+			if (Room[i] != -1)
+				clients[c_id].send_enter_room_packet(Room[i]);
 		}
 		break;
 	}
@@ -315,10 +357,49 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 	return 0;
 }
 
+void InitPos()
+{
+	Poses[0].x = 485.1;
+	Poses[0].y = 2;
+	Poses[0].z = 279.6;
+
+	Poses[1].x = -163.12;
+	Poses[1].y = 2;
+	Poses[1].z = 509.44;
+
+	Poses[2].x = -44;
+	Poses[2].y = 2;
+	Poses[2].z = -12.53;
+
+	Poses[3].x = 418.77;
+	Poses[3].y = 2;
+	Poses[3].z = 12.48;
+
+	Poses[4].x = 181.94;
+	Poses[4].y = 2;
+	Poses[4].z = 670.8;
+
+	Poses[5].x = 225.98;
+	Poses[5].y = 2;
+	Poses[5].z = 175.19;
+
+	Poses[6].x = 195;
+	Poses[6].y = 2;
+	Poses[6].z = 665;
+
+	Poses[7].x = 110.5;
+	Poses[7].y = 2;
+	Poses[7].z = 282.4;
+
+	
+
+}
+
 int main(int argc, char* argv[])
 {
-																																						// 윈속 초기화
-	WSAData wsaData;
+	InitPos();
+	std::srand(static_cast<unsigned int>(std::time(nullptr)));
+	WSAData wsaData;																																	// 윈속 초기화
 	if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 		return 0;
 
