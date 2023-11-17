@@ -1456,7 +1456,13 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 
 		break;
 	}
-
+	case SC_GAME_START: {
+		//SC_GAME_START_PACKET* p= reinterpret_cast<SC_GAME_START_PACKET*>(packet);
+		m_pUIManager->DeleteAllRect();
+		m_pScoreManager->DeleteAllRect();
+		MakePlayButton();
+		m_PreGameState = m_GameState = PlayStage;
+	}
 	}
 }
 
