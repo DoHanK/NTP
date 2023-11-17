@@ -807,8 +807,22 @@ void CGameFrameWork::FrameAdvance() {
 
 		}
 		else {
-
-			process_packet(0, m_RecvBuffer); //리시브 받은걸 저장 프로세스 패킷에서 처리해줌
+			memcpy(m_RemainBuffer + remainLen, m_RecvBuffer, recvLen);
+			int remain_data = recvLen + remainLen;
+			char* p = m_RemainBuffer;
+			while (remain_data > 0) {
+				int packet_size = p[0];
+				if (packet_size <= remain_data) {
+					process_packet(0, p);
+					p = p + packet_size;
+					remain_data = remain_data - packet_size;
+				}
+				else break;
+			}
+			remainLen = remain_data;
+			if (remain_data > 0) {
+				memcpy(m_RemainBuffer, p, remain_data);
+			}
 		}
 	}
 
@@ -1326,6 +1340,8 @@ int CGameFrameWork::InitSocket() {
 	inet_pton(AF_INET, SERVERIP, &serveraddr.sin_addr);
 	serveraddr.sin_port = htons(PORT_NUM);
 
+	recvLen = 0;
+	memset(m_RecvBuffer, 0, sizeof(m_RecvBuffer));
 	//retval = connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
 	//if (retval) {
 	//	TCHAR temp[256];

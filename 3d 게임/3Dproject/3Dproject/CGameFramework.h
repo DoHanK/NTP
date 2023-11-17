@@ -92,6 +92,8 @@ private:
 	int		sendLen;																													
 	char	m_RecvBuffer[BUF_SIZE];																												// RecvBuffer
 	int		recvLen;
+	char	m_RemainBuffer[BUF_SIZE * 2];
+	int		remainLen;
 	char	KeyInputBuffer[NameBufferSize];
 public:
 	CGameFrameWork();
