@@ -1,10 +1,12 @@
 #pragma once
+#include "Session.h"
 #include "Timer.h"
 #include "Shader.h"
 #include "Camera.h"
 #include "CMeshManager.h"
 #include "CUiManager.h"
 #include "Player.h"
+
 
 #define MAX_LIGHTS			16 
 
@@ -82,7 +84,7 @@ class CScene
 	vector<CGameObject*> CGameObjects; 
 	vector<CGameObject*> m_CGameBackGround;
 
-	list<CTank*> CTankObjects;
+	vector<CTank*> CTankObjects;
 	CIlluminatedShader* m_pCllluminatedShader = NULL;
 	CBoundingBoxShader* m_pBoundingBoxShader = NULL; 
 
@@ -109,6 +111,8 @@ class CScene
 
 	void BulletToObject();
 
+	//레디 -> 다른 플레이어 정보 넣어주기
+	void InitOtherPlayer(std::array<SESSION, MAX_USER> &Players, int id);
 
 
 protected:

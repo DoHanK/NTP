@@ -36,7 +36,7 @@ struct CS_CHANGE_COLOR_PACKET {																														// C -> S 색깔 바꾸
 };
 
 struct CS_MOVE_PACKET {																																// C -> S 이동 패킷
-	unsigned char	ize;
+	unsigned char	size;
 	char			type;
 	XMFLOAT3		pos;
 	XMFLOAT3		top_dir;
@@ -62,6 +62,7 @@ struct CS_ENTER_ROOM_PACKET {																														// C -> S 방 입장 패�
 	char			type;
 	int				color;
 };
+
 
 struct SC_LOGIN_INFO_PACKET {																														// S -> C 로그인 정보 패킷
 	unsigned char	size;

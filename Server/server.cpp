@@ -24,8 +24,8 @@ mutex m;
 array<int, 3> Room{ -1,-1,-1 };
 int Ready_Player = 0;
 
-array<XMFLOAT3, 7> Poses{};
-array<int, 7> Pos_List{-1,-1,-1,-1,-1,-1,-1};
+array<XMFLOAT3, 8> Poses{};
+array<int, 8> Pos_List{-1,-1,-1,-1,-1,-1,-1};
 int RandomNumber;
 
 XMFLOAT3 Default_Pos{0,0,0};

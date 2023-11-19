@@ -345,7 +345,7 @@ CTank::CTank(CSumMesh* Mesh)
 
 	CGameObject::InitAnimaition();
 	auto p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Tower"; });
-	TopTransform = &(p->second);
+	TopTransform = (p->second);
 	UpdateBoundingBox();
 
 }
@@ -360,7 +360,7 @@ void CTank::UpdateBoundingBox()
 	if (m_pMesh) {
 		m_pMesh->m_pMesh->m_xmBoundingBox.Transform(m_BoundingBox, XMLoadFloat4x4(&m_xmf4x4World));
 		XMStoreFloat4(&m_BoundingBox.Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_BoundingBox.Orientation)));
-		XMFLOAT4X4 temp = Matrix4x4::Multiply(*TopTransform,m_xmf4x4World);
+		XMFLOAT4X4 temp = Matrix4x4::Multiply(TopTransform,m_xmf4x4World);
 
 
 		TopMesh->m_pMesh->m_xmBoundingBox.Transform(TopBoundingBox, XMLoadFloat4x4(&temp));

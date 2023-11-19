@@ -2,6 +2,7 @@
 #include "Scene.h"
 #include "Shader.h"
 #include "GameObject.h"
+
 CScene::CScene() {}
 
 //1000000 x 1000000 x 1000000 싸이즈의 스카이맵
@@ -252,11 +253,11 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 	 ////////////////////
 	//적 오브젝트
 	///////////////////
-	 for (int i = 0; i < 25; i++) {
+	 for (int i = 0; i < 4; i++) {
 		 CTank* pGameObject = new CTank(m_MeshManager->BringMesh(pd3dDevice, pd3dCommandList, m_pd3dGraphicsRootSignature, "Models/TankFree.bin"));
 		 pGameObject->m_TextureAddr = m_MeshManager->BringTexture(pd3dDevice, pd3dCommandList, "Texture/TankRed.dds");
 		 bool CheckCrush = true;
-
+		 pGameObject->m_bActive = false;
 		 int test = 0;
 		 if (test == 0) {
 			 while (CheckCrush) {
@@ -280,7 +281,7 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 	 }
 
 	 //Explode입니당
-	 for (int i = 0; i < 25; i++) {
+	 for (int i = 0; i < 4; i++) {
 		 BillBoard* pBillboard = new BillBoard();
 		 pBillboard->m_bActive = FALSE;
 		 pBillboard->SetMesh(new CSumMesh());
@@ -294,7 +295,7 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 	 }
 
 	 //연기 구현 
-	 for (int i = 0; i < 100; i++) {
+	 for (int i = 0; i < 24; i++) {
 		 BillBoard* pBillboard = new BillBoard();
 		 pBillboard->m_bActive = FALSE;
 		 pBillboard->SetMesh(new CSumMesh());
@@ -742,3 +743,65 @@ void CScene::BulletToObject() {
 		}
 	}
 }
+
+void CScene::InitOtherPlayer(std::array<SESSION, MAX_USER>& Players , int id)
+{
+	//player 정보만
+	
+
+		
+		if (Players[id].id >-1) {
+			XMFLOAT4X4 TempMatrix;
+			//TempMatrix._11 = Players[id].status.topDir.x;
+			//TempMatrix._12 = Players[id].status.topDir.y;
+			//TempMatrix._13 = Players[id].status.topDir.z;
+			//TempMatrix._14 = 1.0f;
+			//TempMatrix._21 = 0;
+			//TempMatrix._22 = 1.0f;
+			//TempMatrix._23 = 0;
+			//TempMatrix._24 = 1.0f;
+			//XMFLOAT3 LookVector = Vector3::CrossProduct(Players[id].status.get_top_dir(), XMFLOAT3(0, 1, 0));
+			//TempMatrix._31 = LookVector.x;
+			//TempMatrix._32 = LookVector.y;
+			//TempMatrix._33 = LookVector.z;
+			//TempMatrix._34 = 1.0f;
+			//TempMatrix._41 = Players[id].status.get_pos().x;
+			//TempMatrix._42 = Players[id].status.get_pos().y;
+			//TempMatrix._43 = Players[id].status.get_pos().z;
+			//TempMatrix._44 = 1.0f;
+
+			////top Info
+			//CTankObjects[Players[id].id]->TopTransform = TempMatrix;
+			////top Info
+			//TempMatrix._11 = Players[id].status.bottomDir.x;
+			//TempMatrix._12 = Players[id].status.bottomDir.y;
+			//TempMatrix._13 = Players[id].status.bottomDir.z;
+			//LookVector = Vector3::CrossProduct(Players[id].status.get_top_dir(), XMFLOAT3(0, 1, 0));
+			//TempMatrix._31 = LookVector.x;
+			//TempMatrix._32 = LookVector.y;
+			//TempMatrix._33 = LookVector.z;
+			//CTankObjects[Players[id].id]->BottomTransform = TempMatrix;
+
+			if (Players[id].color == 0) {
+				CTankObjects[Players[id].id]->m_TextureAddr = m_MeshManager->BringTexture("Texture/TankBlue.dds");
+			}
+			else if (Players[id].color == 1) {
+				CTankObjects[Players[id].id]->m_TextureAddr = m_MeshManager->BringTexture("Texture/TankRed.dds");
+			}
+			else if (Players[id].color == 2) {
+				CTankObjects[Players[id].id]->m_TextureAddr = m_MeshManager->BringTexture("Texture/TankGreen.dds");
+			}
+			else if (Players[id].color == 3) {
+
+				CTankObjects[Players[id].id]->m_TextureAddr = m_MeshManager->BringTexture("Texture/TankYellow.dds");
+			}
+
+
+			CTankObjects[Players[id].id]->SetPosition(Players[id].status.get_pos());
+			CTankObjects[Players[id].id]->m_bActive = true; 
+		}
+	
+}
+
+
+

@@ -152,7 +152,12 @@ public:
 	CTank(CSumMesh* Mesh);
 	~CTank() {};
 	BoundingOrientedBox TopBoundingBox;
-	XMFLOAT4X4* TopTransform;
+	XMFLOAT4X4 TopTransform;
+
+	XMFLOAT4X4 BottomTransform;
+
+	XMFLOAT4X4 TopWorldTransform;
+	XMFLOAT4X4 DownWorldTransform;
 	CSumMesh* TopMesh = nullptr;
 	virtual void Animate(float fTimeElapsed);
 	virtual void UpdateBoundingBox();

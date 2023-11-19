@@ -49,6 +49,7 @@ using namespace std;
 #include <list>
 #include <algorithm>
 #include <ranges>
+#include <array>
 /// 
 
 //게임 상태 정리

@@ -764,3 +764,51 @@ void CTanker::ChangeColor(CD3DX12_GPU_DESCRIPTOR_HANDLE* TankTexAddr, CD3DX12_GP
 	}
 
 }
+
+void CTanker::initGame(void* packet)
+{
+	SC_ADD_PLAYER_PACKET* p = reinterpret_cast<SC_ADD_PLAYER_PACKET*>(packet);
+	//XMFLOAT4X4 TempMatrix;
+	//TempMatrix._12 = p->top_dir.y;
+	//TempMatrix._13 = p->top_dir.z;
+	//TempMatrix._11 = p->top_dir.x;
+	//TempMatrix._14 = 1.0f;
+	//TempMatrix._21 = 0;
+	//TempMatrix._22 = 1.0f;
+	//TempMatrix._23 = 0;
+	//TempMatrix._24 = 1.0f;
+	//XMFLOAT3 LookVector = Vector3::CrossProduct(p->top_dir, XMFLOAT3(0, 1, 0));
+	//TempMatrix._31 = LookVector.x;
+	//TempMatrix._32 = LookVector.y;
+	//TempMatrix._33 = LookVector.z;
+	//TempMatrix._34 = 1.0f;
+	//TempMatrix._41 = p->pos.x;
+	//TempMatrix._42 = p->pos.y;
+	//TempMatrix._43 = p->pos.z;
+	//TempMatrix._44 = 1.0f;
+
+	////top Info
+	//TopTransform = TempMatrix;
+
+	////top Info
+	//TempMatrix._11 = p->bottom_dir.x;
+	//TempMatrix._12 = p->bottom_dir.y;
+	//TempMatrix._13 = p->bottom_dir.z;
+	//LookVector = Vector3::CrossProduct(p->bottom_dir, XMFLOAT3(0, 1, 0));
+	//TempMatrix._31 = LookVector.x;
+	//TempMatrix._32 = LookVector.y;
+	//TempMatrix._33 = LookVector.z;
+	//BottomTransform = TempMatrix;
+	 
+	 
+	 
+	 
+
+	//XMFLOAT3 LookVector = Vector3::CrossProduct(p->top_dir, XMFLOAT3(0.0f, 1.0f, 0.0f));
+	m_xmf3Position= p->pos;
+	//m_xmf3Right =p->top_dir; 
+	//m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	//m_xmf3Look= LookVector;
+
+
+}

@@ -13,6 +13,7 @@
 #include "GameObject.h"
 #include "Camera.h"
 #include "Shader.h"
+#include "NetWork.h"
 
 class CPlayer :public CGameObject
 {
@@ -189,5 +190,5 @@ public:
 	virtual void UpdateBoundingBox();
 
 	void ChangeColor(CD3DX12_GPU_DESCRIPTOR_HANDLE* TankTexAddr,CD3DX12_GPU_DESCRIPTOR_HANDLE* ObjectTexAddr);
-
+	void initGame(void* packet);
 };

@@ -1,12 +1,12 @@
 #pragma once
 #include <array>
 #include "Timer.h"
+#include "Session.h"
 #include "Scene.h"
 #include "Camera.h"
 #include "Player.h"
 #include "CUiManager.h"
 ///////////////서버///////////////////////////////
-#include "Session.h"
 
 
 #define NameBufferSize 7 //닉네임 6글자까지 입력 가능
@@ -188,4 +188,6 @@ public:
 	void PrintPlayerInfo(std::string s, int c_id);
 	//레디상태 전송
 	void SendReadyState();
+	//플레이어 위치 정보 전송
+	void SendPlayerInfoInPlaying();
 };

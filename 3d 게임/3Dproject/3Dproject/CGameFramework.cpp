@@ -46,6 +46,10 @@ CGameFrameWork::CGameFrameWork() {
 
 	memset(KeyInputBuffer, '\0', NameBufferSize);
 
+	//-1은 사용 안하는 id
+	for (SESSION& user : m_OtherPlayer) {
+		user.id = -1;
+	}
 }
 CGameFrameWork::~CGameFrameWork() {
 	// 소켓 리소스 반환
@@ -744,9 +748,10 @@ void CGameFrameWork::ProcessInput() {
 
 void CGameFrameWork::AnimateObjects() {
 
-	int timer = m_GameTimer.GetTimeElapsed();
-	if(m_GameState == PlayStage)
+	float timer = m_GameTimer.GetTimeElapsed();
+	if (m_GameState == PlayStage) {
 		if (m_pScene) m_pScene->AnimateObjects(timer);
+	}
 	if (m_GameState == CustomStage) {
 
 		XMFLOAT3 xmf3Up = m_pPlayer->GetUpVector();
@@ -860,6 +865,10 @@ void CGameFrameWork::FrameAdvance() {
 	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 #endif
 
+	//서버에게 위치 정보 전달
+	if (m_GameState == PlayStage) {
+		SendPlayerInfoInPlaying();
+	}
 
 
 	//서버 받는 곳
@@ -891,6 +900,7 @@ void CGameFrameWork::FrameAdvance() {
 	
 	if (m_GameState == PlayStage)
 	{
+
 			AnimateObjects();
 			ProcessInput();
 			ChangeScore();
@@ -1412,6 +1422,20 @@ void CGameFrameWork::SendReadyState() {
 	send(m_ServerSocket, m_SendBuffer, p.size, 0); //레디 상태 전송
 }
 
+void CGameFrameWork::SendPlayerInfoInPlaying()
+{
+	//위치 상태 전송.
+	CS_MOVE_PACKET p;
+	p.size = sizeof(CS_MOVE_PACKET);
+	p.type = CS_MOVE;
+	p.pos = m_pPlayer->GetPosition();
+	p.top_dir = XMFLOAT3(m_pPlayer->TopTransform._11, m_pPlayer->TopTransform._12, m_pPlayer->TopTransform._13);
+	p.bottom_dir = XMFLOAT3(m_pPlayer->BottomTransform._11, m_pPlayer->BottomTransform._12, m_pPlayer->BottomTransform._13);
+
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_MOVE_PACKET));
+	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+}
+
 
 
 
@@ -1462,7 +1486,23 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_pScoreManager->DeleteAllRect();
 		MakePlayButton();
 		m_PreGameState = m_GameState = PlayStage;
+	}break;
+	case SC_ADD_PLAYER: {
+		SC_ADD_PLAYER_PACKET* p= reinterpret_cast<SC_ADD_PLAYER_PACKET*>(packet);
+		//정보 초기화
+		if (m_myid != p->id) {
+			m_OtherPlayer[p->id].status.topDir = p->top_dir;
+			m_OtherPlayer[p->id].status.bottomDir = p->bottom_dir;
+			m_OtherPlayer[p->id].status.pos = p->pos;
+			m_pScene->InitOtherPlayer(m_OtherPlayer, p->id);
+		}
+		else {
+			m_pPlayer->initGame(p);
+		}
 	}
+	break;
+	case SC_MOVE_PLAYER:
+		SC_MOVE_PLAYER_PACKET* p = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
 	}
 }
 

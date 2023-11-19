@@ -10,14 +10,15 @@ using namespace std;
 #define READYDELAY 1
 
 void PrintVal(int c_id);
+
 class Status {
-private:
+
+public:
 	int            hp;
 	int            speed;
 	XMFLOAT3       pos;
 	XMFLOAT3       topDir;
 	XMFLOAT3       bottomDir;
-public:
 	// setter
 	void change_hp(int Hp) {
 		hp = Hp;
@@ -71,6 +72,7 @@ public:
 	int				sendLen;
 	bool			error;
 	int				timer; //delay ¼³Á¤
+
 
 public:
 	SESSION() : socket(0), in_use(false)
