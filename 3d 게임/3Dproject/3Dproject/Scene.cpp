@@ -273,11 +273,11 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 		 else {
 			 pGameObject->SetPosition(rand() % 100, 2, rand() % 100);
 			 pGameObject->UpdateBoundingBox();
+		 }
+
 			 //행렬 정보 얻기
 			 pGameObject->InitAnimaition();
 			 pGameObject->FindFrameSet();
-		 }
-
 		 CTankObjects.push_back(pGameObject);
 
 
@@ -813,16 +813,16 @@ void CScene::UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id){
 		TempMatrix._11 = Players[id].status.topDir.x;
 		TempMatrix._12 = Players[id].status.topDir.y;
 		TempMatrix._13 = Players[id].status.topDir.z;
-		TempMatrix._14 = 1.0f;
+		TempMatrix._14 = 0.0f;
 		TempMatrix._21 = 0;
 		TempMatrix._22 = 1.0f;
 		TempMatrix._23 = 0;
-		TempMatrix._24 = 1.0f;
+		TempMatrix._24 = 0.0f;
 		XMFLOAT3 LookVector = Vector3::CrossProduct(Players[id].status.get_top_dir(), XMFLOAT3(0, 1, 0));
 		TempMatrix._31 = LookVector.x;
 		TempMatrix._32 = LookVector.y;
 		TempMatrix._33 = LookVector.z;
-		TempMatrix._34 = 1.0f;
+		TempMatrix._34 = 0.0f;
 		TempMatrix._41 = Players[id].status.get_pos().x;
 		TempMatrix._42 = Players[id].status.get_pos().y;
 		TempMatrix._43 = Players[id].status.get_pos().z;
@@ -830,11 +830,12 @@ void CScene::UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id){
 
 		//top Info
 		CTankObjects[Players[id].id]->TopTransform = TempMatrix;
+
 		//top Info
 		TempMatrix._11 = Players[id].status.bottomDir.x;
 		TempMatrix._12 = Players[id].status.bottomDir.y;
 		TempMatrix._13 = Players[id].status.bottomDir.z;
-		LookVector = Vector3::CrossProduct(Players[id].status.get_top_dir(), XMFLOAT3(0, 1, 0));
+		LookVector = Vector3::CrossProduct(Players[id].status.get_bottom_dir(), XMFLOAT3(0, 1, 0));
 		TempMatrix._31 = LookVector.x;
 		TempMatrix._32 = LookVector.y;
 		TempMatrix._33 = LookVector.z;
