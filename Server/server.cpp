@@ -37,6 +37,9 @@ private:
 	XMFLOAT3 pos;
 	XMFLOAT3 topDir;
 	XMFLOAT3 bottomDir;
+	array<XMFLOAT3, 30> bullets_pos;
+	array<XMFLOAT3, 30> bullets_dir;
+	array<bool, 30> in_use_bullets;
 public:
 	// setter
 	void change_hp(int Hp) {
@@ -54,6 +57,15 @@ public:
 	void change_bottom_dir(XMFLOAT3 BottomDir) {
 		bottomDir = BottomDir;
 	}
+	void change_bullet_pos(int index , XMFLOAT3 Pos) {
+		bullets_pos[index] = Pos;
+	}
+	void change_bullet_dir(int index, XMFLOAT3 Pos) {
+		bullets_dir[index] = Pos;
+	}
+	void change_bullet_status(int index, bool in_use) {
+		in_use_bullets[index] = in_use;
+	}
 
 	// getter
 	int get_hp() {
@@ -70,6 +82,15 @@ public:
 	}
 	XMFLOAT3 get_bottom_dir() {
 		return bottomDir;
+	}
+	XMFLOAT3 get_bullet_pos(int index) {
+		return bullets_pos[index];
+	}
+	XMFLOAT3 get_bullet_dir(int index) {
+		return bullets_dir[index];
+	}
+	bool get_bullet_status(int index) {
+		return in_use_bullets[index];
 	}
 
 };
@@ -103,6 +124,9 @@ public:
 		remainLen = 0;
 		ready = false;
 		memset(remainBuffer, 0, sizeof(remainBuffer));
+		for (int i = 0; i < 30; ++i) {
+			status.change_bullet_status(i, false);
+		}
 	}
 
 	~SESSION() {}
@@ -172,6 +196,7 @@ public:
 	void send_hitted_packet(int c_id);
 	void send_game_start_packet();
 	void send_remove_player_packet(int c_id);
+	void send_bullet_packet(int c_id, int index);
 };
 
 array<SESSION, MAX_USER> clients;																												// 클라이언트 배열 생성
@@ -237,6 +262,19 @@ void SESSION::send_remove_player_packet(int c_id)
 	p.size = sizeof(SC_REMOVE_PLAYER_PACKET);
 	p.type = SC_REMOVE_PLAYER;
 	p.id = c_id;
+	do_send(&p);
+}
+
+void SESSION::send_bullet_packet(int c_id, int Index)
+{
+	SC_BULLET_PACKET p;
+	p.size = sizeof(SC_BULLET_PACKET);
+	p.type = SC_BULLET;
+	p.id = c_id;
+	p.index = Index;
+	p.color = color;
+	p.pos = status.get_bullet_pos(Index);
+	p.dir = status.get_bullet_dir(Index);
 	do_send(&p);
 }
 
@@ -346,6 +384,20 @@ void process_packet(int c_id, char* packet)
 			if (pl.id == c_id)
 				continue;
 			pl.send_move_packet(c_id);
+		}
+		break;
+	}
+	case CS_BULLET: {
+		CS_BULLET_PACKET* p = reinterpret_cast<CS_BULLET_PACKET*>(packet);
+		clients[c_id].status.change_bullet_status(p->index, true);
+		clients[c_id].status.change_bullet_pos(p->index, p->pos);
+		clients[c_id].status.change_bullet_dir(p->index, p->dir);
+		for (auto& pl : clients) {
+			if (pl.in_use == false)
+				continue;
+			if (pl.id == c_id)
+				continue;
+			pl.send_bullet_packet(c_id, p->index);
 		}
 	}
 	}

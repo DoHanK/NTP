@@ -12,6 +12,7 @@ constexpr char CS_LOGIN = 0;
 constexpr char CS_MOVE = 1;
 constexpr char CS_READY = 2;
 constexpr char CS_ENTER_ROOM = 3;
+constexpr char CS_BULLET = 4;
 
 constexpr char SC_LOGIN_INFO = 2;
 constexpr char SC_ADD_PLAYER = 3;
@@ -20,6 +21,7 @@ constexpr char SC_MOVE_PLAYER = 5;
 constexpr char SC_READY = 6;
 constexpr char SC_ENTER_ROOM = 7;
 constexpr char SC_GAME_START = 8;
+constexpr char SC_BULLET = 9;
 
 #pragma pack (push, 1)
 struct CS_LOGIN_PACKET {																															// C -> S 로그인 패킷
@@ -46,7 +48,8 @@ struct CS_MOVE_PACKET {																																// C -> S 이동 패킷
 struct CS_BULLET_PACKET {																															// C -> S 총알 패킷
 	unsigned char	size;
 	char			type;
-	int				color;
+	XMFLOAT3		pos;
+	XMFLOAT3		dir;
 	int				index;
 	int				damage;
 };
@@ -118,11 +121,11 @@ struct SC_HITTED_PACKET {																															// S -> C 피격 패킷
 struct SC_BULLET_PACKET {																															// S -> C 총알 패킷
 	unsigned char	size;
 	char			type;
+	int				id;
 	int				index;
 	int				color;
 	XMFLOAT3		pos;
 	XMFLOAT3		dir;
-	bool			in_use;
 };
 
 struct SC_READY_PACKET {
