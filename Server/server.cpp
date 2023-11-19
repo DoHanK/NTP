@@ -117,11 +117,7 @@ public:
 			cout << "Bind ErrorCode : " << errCode << endl;
 			error = true;
 			Room[pos_num] = -1;
-			for (auto& pl : clients) {
-				if (pl.id == id)
-					continue;
-				pl.send_remove_player_packet(id);
-			}
+			status.change_hp(0);
 			return;
 		}
 		memcpy(remainBuffer + remainLen, recvBuffer, recvLen);
