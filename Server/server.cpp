@@ -264,7 +264,7 @@ void process_packet(int c_id, char* packet)
 				if (pl.in_use == false)
 					continue;
 				for (;;) {
-					RandomNumber = std::rand() % 7;
+					RandomNumber = std::rand() % 8;
 					if (Pos_List[RandomNumber] == -1) {
 						Pos_List[RandomNumber] = pl.id;
 						break;
