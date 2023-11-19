@@ -803,5 +803,47 @@ void CScene::InitOtherPlayer(std::array<SESSION, MAX_USER>& Players , int id)
 	
 }
 
+void CScene::UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id){
+
+	if (Players[id].id > -1) {
+		XMFLOAT4X4 TempMatrix;
+		TempMatrix._11 = Players[id].status.topDir.x;
+		TempMatrix._12 = Players[id].status.topDir.y;
+		TempMatrix._13 = Players[id].status.topDir.z;
+		TempMatrix._14 = 1.0f;
+		TempMatrix._21 = 0;
+		TempMatrix._22 = 1.0f;
+		TempMatrix._23 = 0;
+		TempMatrix._24 = 1.0f;
+		XMFLOAT3 LookVector = Vector3::CrossProduct(Players[id].status.get_top_dir(), XMFLOAT3(0, 1, 0));
+		TempMatrix._31 = LookVector.x;
+		TempMatrix._32 = LookVector.y;
+		TempMatrix._33 = LookVector.z;
+		TempMatrix._34 = 1.0f;
+		TempMatrix._41 = Players[id].status.get_pos().x;
+		TempMatrix._42 = Players[id].status.get_pos().y;
+		TempMatrix._43 = Players[id].status.get_pos().z;
+		TempMatrix._44 = 1.0f;
+
+		//top Info
+		CTankObjects[Players[id].id]->TopTransform = TempMatrix;
+		//top Info
+		TempMatrix._11 = Players[id].status.bottomDir.x;
+		TempMatrix._12 = Players[id].status.bottomDir.y;
+		TempMatrix._13 = Players[id].status.bottomDir.z;
+		LookVector = Vector3::CrossProduct(Players[id].status.get_top_dir(), XMFLOAT3(0, 1, 0));
+		TempMatrix._31 = LookVector.x;
+		TempMatrix._32 = LookVector.y;
+		TempMatrix._33 = LookVector.z;
+		CTankObjects[Players[id].id]->BottomTransform = TempMatrix;
+
+
+
+		CTankObjects[Players[id].id]->SetPosition(Players[id].status.get_pos());
+	
+	}
+
+}
+
 
 

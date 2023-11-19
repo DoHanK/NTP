@@ -1503,6 +1503,13 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 	break;
 	case SC_MOVE_PLAYER:
 		SC_MOVE_PLAYER_PACKET* p = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
+
+		if (m_myid != p->id) {
+			m_OtherPlayer[p->id].status.topDir = p->top_dir;
+			m_OtherPlayer[p->id].status.bottomDir = p->bottom_dir;
+			m_OtherPlayer[p->id].status.pos = p->pos;
+			m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
+		}
 	}
 }
 
