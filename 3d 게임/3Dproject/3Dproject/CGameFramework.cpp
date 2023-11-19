@@ -4,7 +4,7 @@
 #include "NetWork.h"
 
 #define _SERVER_TEST
-#define SERVERTICK 30
+#define SERVERTICK 10
 
 
 CGameFrameWork::CGameFrameWork() {
@@ -1506,7 +1506,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		}
 	}
 	break;
-	case SC_MOVE_PLAYER:
+	case SC_MOVE_PLAYER: {
 		SC_MOVE_PLAYER_PACKET* p = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
 
 		if (m_myid != p->id) {
@@ -1515,7 +1515,24 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			m_OtherPlayer[p->id].status.pos = p->pos;
 			m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
 		}
+		break;
 	}
+	case SC_REMOVE_PLAYER:
+	{
+		SC_REMOVE_PLAYER_PACKET*p= reinterpret_cast<SC_REMOVE_PLAYER_PACKET*>(packet);
+		if (m_myid == p->id) {
+			//자신이 죽었을 때 
+		}
+		else {
+			m_pScene->ReomvePlayer(p->id);
+		}
+		break;
+	}
+
+
+	}
+
+	
 }
 
 void CGameFrameWork::PrintPlayerInfo(std::string s ,int c_id)
