@@ -424,16 +424,20 @@ void process_packet(int c_id, char* packet)
 	}
 	case CS_ATTACK: {
 		CS_ATTACK_PACKET* p = reinterpret_cast<CS_ATTACK_PACKET*>(packet);
-		clients[p->id].status.change_hp(-10);
+		if (p->id != -1) {
+			clients[p->id].status.change_hp(-10);
+		}
 		clients[c_id].status.change_bullet_status(p->bullet_index, false);
 
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
 				continue;
-			if (clients[p->id].status.get_hp() <= 10)
-				pl.send_remove_player_packet(p->id);
-			else
-				pl.send_hitted_packet(p->id);
+			if (p->id != -1) {
+				if (clients[p->id].status.get_hp() <= 10)
+					pl.send_remove_player_packet(p->id);
+				else
+					pl.send_hitted_packet(p->id);
+			}
 			pl.send_remove_bullet_packet(c_id, p->bullet_index);
 		}
 	}
