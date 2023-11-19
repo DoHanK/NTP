@@ -167,6 +167,7 @@ public:
 	CSumMesh* TopMesh;
 	CSumMesh* GunMesh;
 	CSumMesh* BottomMesh;
+	CSumMesh* WheelMesh[4];
 	virtual void Animate(float fTimeElapsed);
 
 	virtual void UpdateBoundingBox();

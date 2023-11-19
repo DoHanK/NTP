@@ -342,7 +342,8 @@ CTank::CTank(CSumMesh* Mesh)
 	CSumMesh* findFrame = Mesh->FindFrame("TankFree_Tower");
 	TopMesh = findFrame;
 	TopBoundingBox = Mesh->m_pMesh->m_xmBoundingBox;
-
+	XMStoreFloat4x4(&TopTransform, XMMatrixIdentity());
+	XMStoreFloat4x4(&BottomTransform, XMMatrixIdentity());
 	CGameObject::InitAnimaition();
 	auto p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Tower"; });
 	TopTransform = (p->second);
@@ -357,15 +358,15 @@ void CTank::Animate(float fTimeElapsed)
 
 void CTank::FindFrameSet()
 {
-	//auto p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_b_right"; });
-	//wheel[0] = &(p->second);
-	//p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_b_left"; });
-	//wheel[1] = &(p->second);
-	//p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_f_right"; });
-	//wheel[2] = &(p->second);
-	//p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_f_left"; });
-	//wheel[3] = &(p->second);
-	auto p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Tower"; });
+	auto p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_b_right"; });
+	wheel[0] = &(p->second);
+	p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_b_left"; });
+	wheel[1] = &(p->second);
+	p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_f_right"; });
+	wheel[2] = &(p->second);
+	p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_f_left"; });
+	wheel[3] = &(p->second);
+	 p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Tower"; });
 	Top = &(p->second);
 	p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Canon"; });
 	Gun = &(p->second);
@@ -375,10 +376,10 @@ void CTank::FindFrameSet()
 	TopMesh = m_pMesh->FindFrame("TankFree_Tower");
 	GunMesh = m_pMesh->FindFrame("TankFree_Canon");
 	BottomMesh = m_pMesh->FindFrame("TankFree_Green");
-	//WheelMesh[0] = m_pMesh->FindFrame("TankFree_Wheel_b_right");
-	//WheelMesh[1] = m_pMesh->FindFrame("TankFree_Wheel_b_left");
-	//WheelMesh[2] = m_pMesh->FindFrame("TankFree_Wheel_f_right");
-	//WheelMesh[3] = m_pMesh->FindFrame("TankFree_Wheel_f_left");
+	WheelMesh[0] = m_pMesh->FindFrame("TankFree_Wheel_b_right");
+	WheelMesh[1] = m_pMesh->FindFrame("TankFree_Wheel_b_left");
+	WheelMesh[2] = m_pMesh->FindFrame("TankFree_Wheel_f_right");
+	WheelMesh[3] = m_pMesh->FindFrame("TankFree_Wheel_f_left");
 }
 
 void CTank::UpdateBoundingBox()
@@ -404,6 +405,10 @@ void CTank::OnPrepareRender()
 void CTank::UpdateAllTansform()
 {
 	BottomMesh->m_xmf4x4World = Matrix4x4::Multiply(*Bottom, BottomTransform);
+	WheelMesh[0]->m_xmf4x4World = Matrix4x4::Multiply(*wheel[0], BottomMesh->m_xmf4x4World);
+	WheelMesh[1]->m_xmf4x4World = Matrix4x4::Multiply(*wheel[1], BottomMesh->m_xmf4x4World);
+	WheelMesh[2]->m_xmf4x4World = Matrix4x4::Multiply(*wheel[2], BottomMesh->m_xmf4x4World);
+	WheelMesh[3]->m_xmf4x4World = Matrix4x4::Multiply(*wheel[3], BottomMesh->m_xmf4x4World);
 	TopMesh->m_xmf4x4World = Matrix4x4::Multiply(*Top, TopTransform);
 	GunMesh->m_xmf4x4World = Matrix4x4::Multiply(*Gun, TopMesh->m_xmf4x4World);
 }
