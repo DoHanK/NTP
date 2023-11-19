@@ -4,7 +4,7 @@
 #include "NetWork.h"
 
 #define _SERVER_TEST
-#define SERVERTICK 30
+#define SERVERTICK 10
 
 
 CGameFrameWork::CGameFrameWork() {
