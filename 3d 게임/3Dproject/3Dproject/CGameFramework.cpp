@@ -388,6 +388,9 @@ void CGameFrameWork::BuildObjects() {
 	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/GreenAlpha.dds");
 	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/YellowAlpha.dds");
 
+	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/back.dds");
+	
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	m_pScene = new CScene();
 	m_pScene->m_MeshManager = pMeshManager;
@@ -602,7 +605,9 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 								m_ready = true;
 								SendReadyState();
 							}
-			
+							break;
+						case BACK_BUTTON:
+							m_GameState = LoginStage;
 							break;
 						}
 					}
@@ -627,10 +632,11 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 			case InitStage:
 				break;
 			case LoginStage: //Multi 부분과 button 
-				InitSocket(); //로그인
-				m_conneted = true;
+				if (!m_conneted) {
+					InitSocket(); //로그인
+					m_conneted = true;
+				}
 				Makemulticustomebutton();
-
 				break;
 			case ReadyStage:// 여기에서 윈소켓 Init과 Connect 해결
 				MakeReadyStage();
@@ -1106,15 +1112,15 @@ void CGameFrameWork::MakeCustomButton()
 {
 
 	if (m_pMeshManager && m_pUIManager) {
-
-
-		m_pUIManager->CreateUIRect_Func(600, 650, 350, 440, RED_COLOR_BUTTON,   m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/REDBUTTON.dds")    , NULL);
-		m_pUIManager->CreateUIRect_Func(600, 650, 440, 530, GREEN_COLOR_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/GREENBUTTON.dds") , NULL);
-		m_pUIManager->CreateUIRect_Func(650, 700, 350, 440, BLUE_COLOR_BUTTON,  m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/BLUEBUTTON.dds")  , NULL);
-		m_pUIManager->CreateUIRect_Func(650, 700, 440, 530, YELLOW_COLOR_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/YELLOWBUTTON.dds"), NULL);
-		m_pUIManager->CreateUIRect_Func(600, 700, 350, 530, CUSTOM_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/CUSTOMBt.dds"), NULL);
-		m_pUIManager->CreateUIRect_Func(490, 590, 350, 700, START_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/StartBt.dds"), NULL);
-		m_pUIManager->CreateUIRect_Func(600, 700, 540, 700, EXIT_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/EXITBt.dds"), NULL);
+	
+		m_pUIManager->CreateUIRect_Func(0, 80, 1000, 1080, BACK_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/UIResource/back.dds"), NULL);
+		m_pUIManager->CreateUIRect_Func(500, 600, 450, 550, RED_COLOR_BUTTON,   m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/REDBUTTON.dds")    , NULL);
+		m_pUIManager->CreateUIRect_Func(500, 600, 550, 650, GREEN_COLOR_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/GREENBUTTON.dds") , NULL);
+		m_pUIManager->CreateUIRect_Func(600, 700, 450, 550, BLUE_COLOR_BUTTON,  m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/BLUEBUTTON.dds")  , NULL);
+		m_pUIManager->CreateUIRect_Func(600, 700, 550, 650, YELLOW_COLOR_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/YELLOWBUTTON.dds"), NULL);
+		//m_pUIManager->CreateUIRect_Func(600, 700, 350, 530, CUSTOM_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/CUSTOMBt.dds"), NULL);
+		//m_pUIManager->CreateUIRect_Func(490, 590, 350, 700, START_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/StartBt.dds"), NULL);
+		//m_pUIManager->CreateUIRect_Func(600, 700, 540, 700, EXIT_BUTTON, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/EXITBt.dds"), NULL);
 	}
 
 }

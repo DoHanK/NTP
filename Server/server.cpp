@@ -37,6 +37,9 @@ private:
 	XMFLOAT3 pos;
 	XMFLOAT3 topDir;
 	XMFLOAT3 bottomDir;
+	array<XMFLOAT3, 30> bullets_pos;
+	array<XMFLOAT3, 30> bullets_dir;
+	array<bool, 30> in_use_bullets;
 public:
 	// setter
 	void change_hp(int Hp) {
@@ -54,6 +57,15 @@ public:
 	void change_bottom_dir(XMFLOAT3 BottomDir) {
 		bottomDir = BottomDir;
 	}
+	void change_bullet_pos(int index , XMFLOAT3 Pos) {
+		bullets_pos[index] = Pos;
+	}
+	void change_bullet_dir(int index, XMFLOAT3 Pos) {
+		bullets_dir[index] = Pos;
+	}
+	void change_bullet_status(int index, bool in_use) {
+		in_use_bullets[index] = in_use;
+	}
 
 	// getter
 	int get_hp() {
@@ -70,6 +82,15 @@ public:
 	}
 	XMFLOAT3 get_bottom_dir() {
 		return bottomDir;
+	}
+	XMFLOAT3 get_bullet_pos(int index) {
+		return bullets_pos[index];
+	}
+	XMFLOAT3 get_bullet_dir(int index) {
+		return bullets_dir[index];
+	}
+	bool get_bullet_status(int index) {
+		return in_use_bullets[index];
 	}
 
 };
@@ -103,6 +124,9 @@ public:
 		remainLen = 0;
 		ready = false;
 		memset(remainBuffer, 0, sizeof(remainBuffer));
+		for (int i = 0; i < 30; ++i) {
+			status.change_bullet_status(i, false);
+		}
 	}
 
 	~SESSION() {}
@@ -114,7 +138,7 @@ public:
 		if (recvLen <= 0)
 		{
 			int errCode = ::WSAGetLastError();
-			cout << "Bind ErrorCode : " << errCode << endl;
+			std::cout << "Bind ErrorCode : " << errCode << endl;
 			error = true;
 			Room[pos_num] = -1;
 			status.change_hp(0);
@@ -145,7 +169,7 @@ public:
 		sendLen = send(socket, sendBuffer, sendLen, 0);
 		if (sendLen == SOCKET_ERROR) {
 			int errCode = ::WSAGetLastError();
-			cout << "Send ErrorCode : " << errCode << endl;
+			std::cout << "Send ErrorCode : " << errCode << endl;
 			error = true;
 		}
 	}
@@ -172,6 +196,8 @@ public:
 	void send_hitted_packet(int c_id);
 	void send_game_start_packet();
 	void send_remove_player_packet(int c_id);
+	void send_bullet_packet(int c_id, int index);
+	void send_remove_bullet_packet(int c_id, int index);
 };
 
 array<SESSION, MAX_USER> clients;																												// 클라이언트 배열 생성
@@ -240,18 +266,52 @@ void SESSION::send_remove_player_packet(int c_id)
 	do_send(&p);
 }
 
+void SESSION::send_bullet_packet(int c_id, int Index)
+{
+	SC_BULLET_PACKET p;
+	p.size = sizeof(SC_BULLET_PACKET);
+	p.type = SC_BULLET;
+	p.id = c_id;
+	p.index = Index;
+	p.color = color;
+	p.pos = status.get_bullet_pos(Index);
+	p.dir = status.get_bullet_dir(Index);
+	do_send(&p);
+}
+
+void SESSION::send_remove_bullet_packet(int c_id, int Index)
+{
+	SC_REMOVE_BULLET_PACKET p;
+	p.size = sizeof(SC_REMOVE_BULLET_PACKET);
+	p.type = SC_REMOVE_BULLET;
+	p.id = c_id;
+	p.index = Index;
+	p.in_use = false;
+	do_send(&p);
+}
+
+void SESSION::send_hitted_packet(int c_id)
+{
+	SC_HITTED_PACKET p;
+	p.size = sizeof(SC_HITTED_PACKET);
+	p.type = SC_HITTED;
+	p.id = c_id;
+	p.hp = clients[c_id].status.get_hp();
+	do_send(&p);
+}
+
 
 void process_packet(int c_id, char* packet)
 {
 	//cout << "process_packet called" << endl;
 	switch (packet[1]) {
 	case CS_LOGIN: {
-		cout << "Recv Login Packet From Client Num : " << c_id << endl;
+		std::cout << "Recv Login Packet From Client Num : " << c_id << endl;
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
 		clients[c_id].userName = p->name;
 		clients[c_id].send_login_info_packet();
 		std::cout << "User Name - " << clients[c_id].userName << endl;
-		cout << "Send Login Info Packet To Client Num : " << c_id << endl;
+		std::cout << "Send Login Info Packet To Client Num : " << c_id << endl;
 		break;
 	}
 	case CS_READY: {
@@ -271,7 +331,7 @@ void process_packet(int c_id, char* packet)
 			m.unlock();
 		}
 
-		for (auto &pl : clients) {
+		for (auto& pl : clients) {
 			if (pl.in_use == false)
 				continue;
 			pl.send_ready_packet(c_id);
@@ -296,7 +356,7 @@ void process_packet(int c_id, char* packet)
 				}
 				pl.status.change_pos(Poses[RandomNumber]);
 			}
-			
+
 			for (auto& pl : clients) {
 				if (pl.in_use == false)
 					continue;
@@ -308,7 +368,7 @@ void process_packet(int c_id, char* packet)
 		break;
 	}
 	case CS_ENTER_ROOM: {
-		cout << "Recv Enter Room Packet From Client Num : " << c_id << endl;
+		std::cout << "Recv Enter Room Packet From Client Num : " << c_id << endl;
 
 		CS_ENTER_ROOM_PACKET* p = reinterpret_cast<CS_ENTER_ROOM_PACKET*>(packet);
 		for (int i = 0; i < Room.size(); ++i) {
@@ -319,15 +379,15 @@ void process_packet(int c_id, char* packet)
 			}
 		}
 		clients[c_id].color = p->color;
-		
-		for (auto &pl : clients) {
+
+		for (auto& pl : clients) {
 			if (pl.in_use == false)
 				continue;
 			if (pl.id == c_id)
 				continue;
 			pl.send_enter_room_packet(c_id);
 		}
-		for (int i = 0; i < Room.size();  ++i) {
+		for (int i = 0; i < Room.size(); ++i) {
 			if (Room[i] != -1)
 				clients[c_id].send_enter_room_packet(Room[i]);
 		}
@@ -346,6 +406,35 @@ void process_packet(int c_id, char* packet)
 			if (pl.id == c_id)
 				continue;
 			pl.send_move_packet(c_id);
+		}
+		break;
+	}
+	case CS_BULLET: {
+		CS_BULLET_PACKET* p = reinterpret_cast<CS_BULLET_PACKET*>(packet);
+		clients[c_id].status.change_bullet_status(p->index, true);
+		clients[c_id].status.change_bullet_pos(p->index, p->pos);
+		clients[c_id].status.change_bullet_dir(p->index, p->dir);
+		for (auto& pl : clients) {
+			if (pl.in_use == false)
+				continue;
+			if (pl.id == c_id)
+				continue;
+			pl.send_bullet_packet(c_id, p->index);
+		}
+	}
+	case CS_ATTACK: {
+		CS_ATTACK_PACKET* p = reinterpret_cast<CS_ATTACK_PACKET*>(packet);
+		clients[p->id].status.change_hp(-10);
+		clients[c_id].status.change_bullet_status(p->bullet_index, false);
+
+		for (auto& pl : clients) {
+			if (pl.in_use == false)
+				continue;
+			if (clients[p->id].status.get_hp() <= 10)
+				pl.send_remove_player_packet(p->id);
+			else
+				pl.send_hitted_packet(p->id);
+			pl.send_remove_bullet_packet(c_id, p->bullet_index);
 		}
 	}
 	}
@@ -385,12 +474,16 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 
 	while (1) {
 		clients[client_id].do_recv();
-		if (clients[client_id].error) {
+		if (clients[client_id].status.get_hp() <= 0) {
+			for (auto& pl : clients) {
+				if (pl.in_use == false)
+					continue;
+				cout << pl.id << " 에게 " << client_id << "번 클라이언트 종료 알림" << endl;
+				pl.send_remove_player_packet(client_id);
+			}
 			break;
 		}
-		if (clients[client_id].status.get_hp() == 0) {
-			for (auto& pl : clients)
-				pl.send_remove_player_packet(client_id);
+		if (clients[client_id].error) {
 			break;
 		}
 	}
