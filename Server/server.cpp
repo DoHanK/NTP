@@ -200,6 +200,7 @@ void SESSION::send_add_player_packet(int c_id)
 	p.size = sizeof(SC_ADD_PLAYER_PACKET);
 	p.type = SC_ADD_PLAYER;
 	p.id = c_id;
+	p.hp = clients[c_id].status.get_hp();
 	strcpy(p.name, clients[c_id].userName.c_str());
 	p.pos = Poses[c_id];
 	p.top_dir = Default_Pos;
@@ -263,7 +264,7 @@ void process_packet(int c_id, char* packet)
 				if (pl.in_use == false)
 					continue;
 				for (;;) {
-					RandomNumber = std::rand() % 7;
+					RandomNumber = std::rand() % 8;
 					if (Pos_List[RandomNumber] == -1) {
 						Pos_List[RandomNumber] = pl.id;
 						break;

@@ -86,6 +86,7 @@ struct SC_ADD_PLAYER_PACKET {																														// S -> C 플레이어 추
 	unsigned char	size;
 	char			type;
 	short			id;
+	int				hp;
 	XMFLOAT3		pos;
 	XMFLOAT3		top_dir;
 	XMFLOAT3		bottom_dir;
