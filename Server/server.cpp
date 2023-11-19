@@ -388,7 +388,7 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 		if (clients[client_id].error) {
 			break;
 		}
-		if (clients[client_id].status.get_hp() == 0) {
+		if (clients[client_id].status.get_hp() <= 0) {
 			for (auto& pl : clients)
 				pl.send_remove_player_packet(client_id);
 			break;
