@@ -4,7 +4,7 @@
 #include "NetWork.h"
 
 #define _SERVER_TEST
-
+#define SERVERTICK 30
 
 
 CGameFrameWork::CGameFrameWork() {
@@ -867,7 +867,11 @@ void CGameFrameWork::FrameAdvance() {
 
 	//서버에게 위치 정보 전달
 	if (m_GameState == PlayStage) {
-		SendPlayerInfoInPlaying();
+		ServerFrameRate += 1;
+		if (ServerFrameRate > SERVERTICK) {
+			SendPlayerInfoInPlaying();
+			ServerFrameRate = 0;
+		}
 	}
 
 
@@ -904,6 +908,7 @@ void CGameFrameWork::FrameAdvance() {
 			AnimateObjects();
 			ProcessInput();
 			ChangeScore();
+
 	}
 	else if (m_GameState == CustomStage) {
 		AnimateObjects();
