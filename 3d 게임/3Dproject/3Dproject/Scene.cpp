@@ -846,4 +846,6 @@ void CScene::UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id){
 }
 
 
-
+void CScene::ReomvePlayer(int id) {
+	CTankObjects[id]->m_bActive = false;
+}

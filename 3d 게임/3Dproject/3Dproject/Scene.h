@@ -115,6 +115,7 @@ class CScene
 	void InitOtherPlayer(std::array<SESSION, MAX_USER> &Players, int id);
 	//게임 업데이트
 	void UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id);
+	void ReomvePlayer(int id);
 
 protected:
 //배치처리를 위한 씬을 세이더들의 리스트로 표현
