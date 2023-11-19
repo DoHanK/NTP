@@ -385,12 +385,16 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 
 	while (1) {
 		clients[client_id].do_recv();
-		if (clients[client_id].error) {
+		if (clients[client_id].status.get_hp() <= 0) {
+			for (auto& pl : clients) {
+				if (pl.in_use == false)
+					continue;
+				cout << pl.id << " 에게 " << client_id << "번 클라이언트 종료 알림" << endl;
+				pl.send_remove_player_packet(client_id);
+			}
 			break;
 		}
-		if (clients[client_id].status.get_hp() <= 0) {
-			for (auto& pl : clients)
-				pl.send_remove_player_packet(client_id);
+		if (clients[client_id].error) {
 			break;
 		}
 	}
