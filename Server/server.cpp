@@ -208,6 +208,18 @@ void SESSION::send_add_player_packet(int c_id)
 	do_send(&p);
 }
 
+void SESSION::send_move_packet(int c_id)
+{
+	SC_MOVE_PLAYER_PACKET p;
+	p.size = sizeof(SC_MOVE_PLAYER_PACKET);
+	p.type = SC_MOVE_PLAYER;
+	p.id = c_id;
+	p.pos = clients[c_id].status.get_pos();
+	p.top_dir = clients[c_id].status.get_top_dir();
+	p.bottom_dir = clients[c_id].status.get_bottom_dir();
+	do_send(&p);
+}
+
 void SESSION::send_game_start_packet()
 {
 	SC_GAME_START_PACKET p;
@@ -308,6 +320,21 @@ void process_packet(int c_id, char* packet)
 				clients[c_id].send_enter_room_packet(Room[i]);
 		}
 		break;
+	}
+	case CS_MOVE: {
+		CS_MOVE_PACKET* p = reinterpret_cast<CS_MOVE_PACKET*>(packet);
+
+		clients[c_id].status.change_pos(p->pos);
+		clients[c_id].status.change_top_dir(p->top_dir);
+		clients[c_id].status.change_bottom_dir(p->bottom_dir);
+
+		for (auto& pl : clients) {
+			if (pl.in_use == false)
+				continue;
+			if (pl.id == c_id)
+				continue;
+			pl.send_move_packet(c_id);
+		}
 	}
 	}
 }
