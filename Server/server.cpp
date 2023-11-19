@@ -118,8 +118,8 @@ public:
 	{
 		id = -1;
 		status.change_pos({ 0.f, 0.f, 0.f });
-		status.change_top_dir({ 0.f, 0.f, 0.f });
-		status.change_bottom_dir({ 0.f, 0.f, 0.f });
+		status.change_top_dir({ 0.f, 1.f, 0.f });
+		status.change_bottom_dir({ 0.f, 1.f, 0.f });
 		status.change_hp(100);
 		remainLen = 0;
 		ready = false;
