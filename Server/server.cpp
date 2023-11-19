@@ -99,6 +99,7 @@ public:
 		status.change_pos({ 0.f, 0.f, 0.f });
 		status.change_top_dir({ 0.f, 0.f, 0.f });
 		status.change_bottom_dir({ 0.f, 0.f, 0.f });
+		status.change_hp(100);
 		remainLen = 0;
 		ready = false;
 		memset(remainBuffer, 0, sizeof(remainBuffer));
@@ -116,6 +117,7 @@ public:
 			cout << "Bind ErrorCode : " << errCode << endl;
 			error = true;
 			Room[pos_num] = -1;
+			status.change_hp(0);
 			return;
 		}
 		memcpy(remainBuffer + remainLen, recvBuffer, recvLen);
@@ -169,6 +171,7 @@ public:
 	void send_dead_packet(int c_id);
 	void send_hitted_packet(int c_id);
 	void send_game_start_packet();
+	void send_remove_player_packet(int c_id);
 };
 
 array<SESSION, MAX_USER> clients;																												// 클라이언트 배열 생성
@@ -228,10 +231,19 @@ void SESSION::send_game_start_packet()
 	do_send(&p);
 }
 
+void SESSION::send_remove_player_packet(int c_id)
+{
+	SC_REMOVE_PLAYER_PACKET p;
+	p.size = sizeof(SC_REMOVE_PLAYER_PACKET);
+	p.type = SC_REMOVE_PLAYER;
+	p.id = c_id;
+	do_send(&p);
+}
+
 
 void process_packet(int c_id, char* packet)
 {
-	cout << "process_packet called" << endl;
+	//cout << "process_packet called" << endl;
 	switch (packet[1]) {
 	case CS_LOGIN: {
 		cout << "Recv Login Packet From Client Num : " << c_id << endl;
@@ -374,6 +386,11 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 	while (1) {
 		clients[client_id].do_recv();
 		if (clients[client_id].error) {
+			break;
+		}
+		if (clients[client_id].status.get_hp() == 0) {
+			for (auto& pl : clients)
+				pl.send_remove_player_packet(client_id);
 			break;
 		}
 	}
