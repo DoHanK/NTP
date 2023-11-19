@@ -273,6 +273,9 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 		 else {
 			 pGameObject->SetPosition(rand() % 100, 2, rand() % 100);
 			 pGameObject->UpdateBoundingBox();
+			 //행렬 정보 얻기
+			 pGameObject->InitAnimaition();
+			 pGameObject->FindFrameSet();
 		 }
 
 		 CTankObjects.push_back(pGameObject);

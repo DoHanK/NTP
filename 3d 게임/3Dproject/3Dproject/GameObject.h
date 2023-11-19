@@ -158,10 +158,22 @@ public:
 
 	XMFLOAT4X4 TopWorldTransform;
 	XMFLOAT4X4 DownWorldTransform;
-	CSumMesh* TopMesh = nullptr;
-	virtual void Animate(float fTimeElapsed);
-	virtual void UpdateBoundingBox();
 
+	XMFLOAT4X4* Top;
+	XMFLOAT4X4* Bottom;
+	XMFLOAT4X4* Gun;
+	XMFLOAT4X4* wheel[4];
+
+	CSumMesh* TopMesh;
+	CSumMesh* GunMesh;
+	CSumMesh* BottomMesh;
+	virtual void Animate(float fTimeElapsed);
+
+	virtual void UpdateBoundingBox();
+	virtual void  OnPrepareRender();
+	virtual void UpdateAllTansform();
+	virtual void FindFrameSet();
+	virtual void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -355,6 +355,32 @@ void CTank::Animate(float fTimeElapsed)
 	//CGameObject::Animate(fTimeElapsed);
 }
 
+void CTank::FindFrameSet()
+{
+	//auto p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_b_right"; });
+	//wheel[0] = &(p->second);
+	//p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_b_left"; });
+	//wheel[1] = &(p->second);
+	//p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_f_right"; });
+	//wheel[2] = &(p->second);
+	//p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Wheel_f_left"; });
+	//wheel[3] = &(p->second);
+	auto p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Tower"; });
+	Top = &(p->second);
+	p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Canon"; });
+	Gun = &(p->second);
+	p = find_if(m_xmf4x4Animation.begin(), m_xmf4x4Animation.end(), [](pair<string, XMFLOAT4X4> temp) {return temp.first == "TankFree_Green"; });
+	Bottom = &(p->second);
+
+	TopMesh = m_pMesh->FindFrame("TankFree_Tower");
+	GunMesh = m_pMesh->FindFrame("TankFree_Canon");
+	BottomMesh = m_pMesh->FindFrame("TankFree_Green");
+	//WheelMesh[0] = m_pMesh->FindFrame("TankFree_Wheel_b_right");
+	//WheelMesh[1] = m_pMesh->FindFrame("TankFree_Wheel_b_left");
+	//WheelMesh[2] = m_pMesh->FindFrame("TankFree_Wheel_f_right");
+	//WheelMesh[3] = m_pMesh->FindFrame("TankFree_Wheel_f_left");
+}
+
 void CTank::UpdateBoundingBox()
 {
 	if (m_pMesh) {
@@ -367,6 +393,25 @@ void CTank::UpdateBoundingBox()
 		XMStoreFloat4(&TopBoundingBox.Orientation, XMQuaternionNormalize(XMLoadFloat4(&TopBoundingBox.Orientation)));
 	}
 
+}
+
+void CTank::OnPrepareRender()
+{
+	//위 아래 정보를 받아올것
+	UpdateAllTansform();
+}
+
+void CTank::UpdateAllTansform()
+{
+	BottomMesh->m_xmf4x4World = Matrix4x4::Multiply(*Bottom, BottomTransform);
+	TopMesh->m_xmf4x4World = Matrix4x4::Multiply(*Top, TopTransform);
+	GunMesh->m_xmf4x4World = Matrix4x4::Multiply(*Gun, TopMesh->m_xmf4x4World);
+}
+
+void CTank::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera)
+{
+	OnPrepareRender();
+	CGameObject::Render(pd3dCommandList, pCamera);
 }
 
 void BillBoard::Animate(float fTimeElapsed)
