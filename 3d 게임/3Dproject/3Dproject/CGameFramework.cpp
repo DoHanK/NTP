@@ -627,7 +627,7 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 
 			switch (m_GameState) {
 			case PlayStage:
-				MakePlayButton();
+
 				break;
 			case CustomStage:
 				MakeCustomButton();
@@ -917,7 +917,6 @@ void CGameFrameWork::FrameAdvance() {
 
 			AnimateObjects();
 			ProcessInput();
-			ChangeScore();
 
 	}
 	else if (m_GameState == CustomStage) {
@@ -1259,6 +1258,79 @@ void CGameFrameWork::ChangePlayerReadyStage(int id)
 
 }
 
+void CGameFrameWork::MakeGameStage()
+{
+
+
+
+	int offset = 30;
+	int pos = 510;
+	int diff = 70;
+	//color
+	//0Rect
+	for (int j = 0; j < MAX_USER; ++j) {
+		//1player nickname 6Rect
+		for (int i = 0; i < NameBufferSize - 1; i++) {
+
+			m_pUIManager->CreateUIRect(pos + j* diff, pos + offset + j* diff, 125 + 25 * i, 145 + 25 * i, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/alpha.dds"));
+		}
+
+	}
+	//510
+
+	//580
+
+	//650
+
+
+	//color 
+	//player 1  50
+	m_pUIManager->CreateUIRect(500, 550, 0, 110, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/alpha.dds"));
+	//player 2
+	m_pUIManager->CreateUIRect(570, 620, 0, 110, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/alpha.dds"));
+	//player 3
+	m_pUIManager->CreateUIRect(640, 690, 0, 110, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/alpha.dds"));
+
+
+}
+
+void CGameFrameWork::InitPlayerGameStage()
+{
+
+
+	for (int id = 0; id < MAX_USER; ++id) {
+
+		if (m_OtherPlayer[id].id >= 0) {
+			//닉네임 입력
+			for (int i = 0; i < NameBufferSize - 1; i++) {
+				if (m_OtherPlayer[id].userName[i] == '\0')
+					break;
+				std::string filetemp = "Texture/Alphabet/";
+				filetemp += m_OtherPlayer[id].userName[i];
+				filetemp += ".dds";
+				// 알파벳 간격 -> 세로 간격:30,가로 간격:25
+				m_pUIManager->RectList[m_OtherPlayer[id].pos_num * 6 + i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, filetemp.c_str());
+			}
+			//컬러색깔
+			{
+				std::string filetemp = "Texture/playstage/";
+				if (m_OtherPlayer[id].color == red)
+					filetemp += "RedAlpha.dds";
+				else if (m_OtherPlayer[id].color == green)
+					filetemp += "greenAlpha.dds";
+				else if (m_OtherPlayer[id].color == blue)
+					filetemp += "blueAlpha.dds";
+				else
+					filetemp += "yellowAlpha.dds";
+
+				std::string inputdate = filetemp;
+				m_pUIManager->RectList[18 + m_OtherPlayer[id].pos_num].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, inputdate.c_str());
+
+			}
+		}
+	}
+}
+
 
 
 
@@ -1454,9 +1526,9 @@ void CGameFrameWork::SendPlayerInfoInPlaying()
 void CGameFrameWork::SendBulletInfoInPlaying()
 {
 	//위치 상태 전송.
-			CS_BULLET_PACKET p;
-			p.size = sizeof(CS_BULLET_PACKET);
-			p.type = CS_BULLET;
+	CS_BULLET_PACKET p;
+	p.size = sizeof(CS_BULLET_PACKET);
+	p.type = CS_BULLET;
 	for (int i = 0; i < BULLETS; ++i) {
 
 		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
@@ -1528,7 +1600,8 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		//SC_GAME_START_PACKET* p= reinterpret_cast<SC_GAME_START_PACKET*>(packet);
 		m_pUIManager->DeleteAllRect();
 		m_pScoreManager->DeleteAllRect();
-		MakePlayButton();
+		MakeGameStage();
+		InitPlayerGameStage();
 		m_PreGameState = m_GameState = PlayStage;
 		for (int id = 0; id < MAX_USER; ++id) {
 			for (int i = 0; i < BULLETS; ++i) {
