@@ -196,4 +196,6 @@ public:
 	void SendPlayerInfoInPlaying();
 
 	void SendBulletInfoInPlaying();
+
+	void SendHitBullet();
 };

@@ -317,6 +317,7 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 
 		 for (int j = 0; j < BULLETS; ++j) {
 			 AllBullets[i][j].m_pMesh = m_MeshManager->BringMesh("Models/Missile.bin");
+			 AllBullets[i][i].m_TextureAddr = m_MeshManager->BringTexture("Texture/ElementBlue.dds");
 			 AllBullets[i][j].m_bActive = false;
 		 } 
 	 }
@@ -502,7 +503,19 @@ void CScene::AnimateObjects(float fTimeElapsed) {
 			tank->Animate(fTimeElapsed);
 	}
 
-	BulletToTank();
+	////»ó´ëÆí ÃÑ¾Ë
+	//for (int id = 0; id < MAX_USER; ++id) {
+	//	for (int i = 0; i < BULLETS; ++i) {
+	//		if (AllBullets[id][i].m_bActive) {
+
+	//			AllBullets[id][i].Animate(fTimeElapsed);
+
+	//		}
+
+	//	}
+	//}
+
+	//BulletToTank();
 	PlayerToObject();
 	BulletToObject();
 }
@@ -599,6 +612,7 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamrea
 
 				AllBullets[id][i].UpdateAllTansform();
 				AllBullets[id][i].Render(pd3dCommandList, pCamrea);
+				
 			}
 
 		}
@@ -868,7 +882,7 @@ void CScene::UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id){
 
 
 		CTankObjects[Players[id].id]->SetPosition(Players[id].status.get_pos());
-	
+		CTankObjects[Players[id].id]->UpdateBoundingBox();
 	}
 
 }
@@ -887,12 +901,10 @@ void CScene::RefleshBullet(void* packet)
 	for (int i = 0; i < BULLETS; ++i) {
 		
 		if (p->in_use_bullets[i]) {
-
-			std::array<XMFLOAT3, MAX_BULLETS>		bullets_pos;
-			std::array<XMFLOAT3, MAX_BULLETS>		bullets_dir;
-			AllBullets[p->id][i].m_xmf4x4World._11 = p->bullets_dir[i].x;
-			AllBullets[p->id][i].m_xmf4x4World._12 = p->bullets_dir[i].y;
-			AllBullets[p->id][i].m_xmf4x4World._13 = p->bullets_dir[i].z;
+			p->bullets_dir[i] = p->bullets_dir[i];
+			AllBullets[p->id][i].m_xmf4x4World._11 = -p->bullets_dir[i].x;
+			AllBullets[p->id][i].m_xmf4x4World._12 = -p->bullets_dir[i].y;
+			AllBullets[p->id][i].m_xmf4x4World._13 = -p->bullets_dir[i].z;
 			AllBullets[p->id][i].m_xmf4x4World._14 = 0;
 
 			AllBullets[p->id][i].m_xmf4x4World._21 = 0;
@@ -901,16 +913,21 @@ void CScene::RefleshBullet(void* packet)
 			AllBullets[p->id][i].m_xmf4x4World._24 = 0.0f;
 
 			XMFLOAT3 LookVector = Vector3::CrossProduct(p->bullets_dir[i], XMFLOAT3(0, 1, 0));
-			AllBullets[p->id][i].m_xmf4x4World._21 = LookVector.x;
-			AllBullets[p->id][i].m_xmf4x4World._22 = LookVector.y;
-			AllBullets[p->id][i].m_xmf4x4World._23 = LookVector.z;
-			AllBullets[p->id][i].m_xmf4x4World._24 = 1.0f;
-
+			AllBullets[p->id][i].m_xmf4x4World._31 = LookVector.x;
+			AllBullets[p->id][i].m_xmf4x4World._32 = LookVector.y;
+			AllBullets[p->id][i].m_xmf4x4World._33 = LookVector.z;
+			AllBullets[p->id][i].m_xmf4x4World._34 = 0.0f;
+			AllBullets[p->id][i].m_xmf4x4World._41 = p->bullets_pos[i].x;
+			AllBullets[p->id][i].m_xmf4x4World._42 = p->bullets_pos[i].y;
+			AllBullets[p->id][i].m_xmf4x4World._43 = p->bullets_pos[i].z;
+			AllBullets[p->id][i].m_xmf4x4World._44 = 1.0f;
 
 
 			AllBullets[p->id][i].SetMovingDirection(p->bullets_dir[i]);
 			AllBullets[p->id][i].SetFirePosition(p->bullets_pos[i]);
 			AllBullets[p->id][i].SetActive(true);
+			AllBullets[p->id][i].Animate(0.0f);
+
 
 		}
 		else {

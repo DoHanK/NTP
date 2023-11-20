@@ -127,7 +127,7 @@ public:
 	float						m_fLockingDelayTime = 0.3f;
 	float						m_fLockingTime = 4.0f;
 	CGameObject* m_pLockedObject = NULL;
-
+	XMFLOAT3					LookVector;
 
 	XMFLOAT3					m_xmf3RotationAxis = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	float						m_fRotationSpeed = 0.0f;
@@ -152,6 +152,7 @@ public:
 	CTank(CSumMesh* Mesh);
 	~CTank() {};
 	BoundingOrientedBox TopBoundingBox;
+
 	XMFLOAT4X4 TopTransform;
 
 	XMFLOAT4X4 BottomTransform;

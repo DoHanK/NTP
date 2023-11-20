@@ -704,13 +704,14 @@ void CTanker::FireMissile()
 		}
 	}
 
-	if (pBulletObject)
+	if (pBulletObject != NULL)
 	{
 		XMFLOAT3 xmf3Position = GetPosition();
 		XMFLOAT3 xmf3Direction = GetLook();
 		XMFLOAT3 xmf3FirePosition = Vector3::Add(xmf3Position, Vector3::ScalarProduct(xmf3Direction, 2.0f, false));
 		xmf3FirePosition.y += 0.5;
 		pBulletObject->m_xmf4x4World = m_xmf4x4World;
+		pBulletObject->LookVector = XMFLOAT3(m_xmf4x4World._11, m_xmf4x4World._12, m_xmf4x4World._13);
 		pBulletObject->SetFirePosition(xmf3FirePosition);
 		pBulletObject->SetMovingDirection(xmf3Direction);
 		pBulletObject->SetActive(true);

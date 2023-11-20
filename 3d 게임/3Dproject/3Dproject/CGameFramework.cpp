@@ -916,6 +916,7 @@ void CGameFrameWork::FrameAdvance() {
 	{
 
 			AnimateObjects();
+			SendHitBullet();
 			ProcessInput();
 
 	}
@@ -1533,13 +1534,16 @@ void CGameFrameWork::SendBulletInfoInPlaying()
 
 		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
 			p.in_use_bullets[i] = true;
-			XMFLOAT3 temp = XMFLOAT3(m_pPlayer->m_ppBullets[i]->m_xmf4x4World._11
-				, m_pPlayer->m_ppBullets[i]->m_xmf4x4World._12
-				, m_pPlayer->m_ppBullets[i]->m_xmf4x4World._13);
+			XMFLOAT3 temp = XMFLOAT3(m_pPlayer->m_ppBullets[i]->LookVector.x
+				, m_pPlayer->m_ppBullets[i]->LookVector.y
+				, m_pPlayer->m_ppBullets[i]->LookVector.z);
+
 			p.bullets_dir[i] = temp;
+
 			temp = XMFLOAT3(m_pPlayer->m_ppBullets[i]->m_xmf4x4World._41
 				, m_pPlayer->m_ppBullets[i]->m_xmf4x4World._42
 				, m_pPlayer->m_ppBullets[i]->m_xmf4x4World._43);
+
 			p.bullets_pos[i] = temp;
 
 		}
@@ -1549,6 +1553,41 @@ void CGameFrameWork::SendBulletInfoInPlaying()
 	}
 	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
 	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+
+}
+
+void CGameFrameWork::SendHitBullet()
+{
+	//위치 상태 전송.
+	CS_ATTACK_PACKET p;
+	p.size = sizeof(CS_ATTACK_PACKET);
+	p.type = CS_ATTACK;
+	for (int i = 0; i < BULLETS; ++i) {
+		if(m_pPlayer)
+		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
+			
+			for (int id = 0; id < MAX_USER; ++id) {
+
+				if (m_pScene->CTankObjects[id]->m_bActive) {
+					if (m_pScene->CTankObjects[id]->m_BoundingBox.Intersects(m_pPlayer->m_ppBullets[i]->m_BoundingBox)|| m_pScene->CTankObjects[id]->TopBoundingBox.Intersects(m_pPlayer->m_ppBullets[i]->m_BoundingBox)) {
+						
+						m_pPlayer->m_ppBullets[i]->m_bActive = false;
+						m_pPlayer->m_ppBullets[i]->Reset();
+						p.id = id;
+						p.bullet_index = i;
+						memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
+						send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+					}
+				}
+			}
+	
+
+		
+
+		}
+		
+	}
+
 
 }
 
@@ -1619,6 +1658,8 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 				else if (m_OtherPlayer[id].color == 3) {
 					m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementYellow.dds");
 				}
+				m_pScene->AllBullets[id][i].SetRotationAxis(XMFLOAT3(0.0f, 0.0f, 1.0f));
+				m_pScene->AllBullets[id][i].SetRotationSpeed(360.0f);
 			}
 		}
 	}break;
@@ -1653,7 +1694,27 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			//자신이 죽었을 때 
 		}
 		else {
+			for (auto &m : m_pScene->m_BillBoardList) {
+				if (!m->m_bActive) {
+					m->m_bActive = true;
+					m->SetPosition(m_pScene->CTankObjects[p->id]->GetPosition());
+					break;
+				}
+			}
+			for (auto &pBill : m_pScene->m_SubBillBoardList) {
+				if (!pBill->m_bActive) {
+					pBill->m_bActive = true;
+					pBill->SetPosition(m_pScene->CTankObjects[p->id]->GetPosition());
+					break;
+				}
+			}
 			m_pScene->ReomvePlayer(p->id);
+			m_OtherPlayer[p->id].id = -1;
+			m_pUIManager->DeleteAllRect();
+			m_pScoreManager->DeleteAllRect();
+			MakeGameStage();
+			InitPlayerGameStage();
+
 		}
 		break;
 	}
