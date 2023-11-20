@@ -132,7 +132,8 @@ public:
 		int remain_data = recvLen + remainLen;
 		char* p = remainBuffer;
 		while (remain_data > 0) {
-			int packet_size = p[1]*256+p[0];
+			
+			int packet_size = MAKEWORD(p[0], p[1]);
 			if (packet_size <= remain_data) {
 				process_packet(id, p);
 				p = p + packet_size;
@@ -148,7 +149,7 @@ public:
 
 	void do_send(void* packet)																																// 데이터 송신
 	{
-		sendLen = unsigned int(reinterpret_cast<char*>(packet)[1] * 256 + reinterpret_cast<char*>(packet)[0]);
+		sendLen = unsigned int(MAKEWORD(reinterpret_cast<char*>(packet)[0] ,reinterpret_cast<char*>(packet)[1]));
 		memcpy(sendBuffer, reinterpret_cast<char*>(packet),sendLen);
 		sendLen = send(socket, sendBuffer, sendLen, 0);
 		if (sendLen == SOCKET_ERROR) {
@@ -380,6 +381,7 @@ void process_packet(int c_id, char* packet)
 		break;
 	}
 	case CS_BULLET: {
+		std::cout << "총알 패킷 받았어요" << std::endl;
 		CS_BULLET_PACKET* p = reinterpret_cast<CS_BULLET_PACKET*>(packet);
 		memcpy(&clients[c_id].status.bullets_pos, &p->bullets_pos,sizeof(p->bullets_pos));
 		memcpy(&clients[c_id].status.bullets_dir, &p->bullets_dir,sizeof(p->bullets_dir));

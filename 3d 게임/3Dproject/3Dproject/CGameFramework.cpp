@@ -896,7 +896,7 @@ void CGameFrameWork::FrameAdvance() {
 			int remain_data = recvLen + remainLen;
 			char* p = m_RemainBuffer;
 			while (remain_data > 0) {
-				int packet_size = p[0];
+				int packet_size = MAKEWORD(p[0], p[1]);
 				if (packet_size <= remain_data) {
 					process_packet(0, p);
 					p = p + packet_size;
