@@ -4,6 +4,7 @@ using namespace DirectX;
 constexpr int PORT_NUM = 4000;
 constexpr int BUF_SIZE = 200;
 constexpr int NAME_SIZE = 40;
+constexpr int MAX_BULLETS = 30;
 
 constexpr int MAX_USER = 3;
 
@@ -51,12 +52,11 @@ struct CS_MOVE_PACKET {																																// C -> S 이동 패킷
 };
 
 struct CS_BULLET_PACKET {																															// C -> S 총알 패킷
-	unsigned char	size;
-	char			type;
-	XMFLOAT3		pos;
-	XMFLOAT3		dir;
-	int				index;
-	int				damage;
+	unsigned char							size;
+	char									type;
+	std::array<XMFLOAT3, MAX_BULLETS>		bullets_pos;
+	std::array<XMFLOAT3, MAX_BULLETS>		bullets_dir;
+	std::array<bool, MAX_BULLETS>			in_use_bullets;
 };
 
 struct CS_READY_PACKET {																															// C -> S 레디 패킷
