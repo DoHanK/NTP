@@ -414,10 +414,18 @@ void process_packet(int c_id, char* packet)
 		clients[c_id].status.change_bullet_status(p->index, true);
 		clients[c_id].status.change_bullet_pos(p->index, p->pos);
 		clients[c_id].status.change_bullet_dir(p->index, p->dir);
+		XMFLOAT3 tank;
+		XMFLOAT3 bullet;
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
 				continue;
 			if (pl.id == c_id)
+				continue;
+			tank = pl.status.get_pos();
+			bullet = clients[c_id].status.get_bullet_pos();
+			if (((tank.x - bullet.x) < -50.f) || ((tank.x - bullet.x) > 50.f))
+				continue;
+			if (((tank.z - bullet.z) < -50.f) || ((tank.z - bullet.z) > 50.f))
 				continue;
 			pl.send_bullet_packet(c_id, p->index);
 		}
