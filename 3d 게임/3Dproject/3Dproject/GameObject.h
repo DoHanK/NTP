@@ -114,7 +114,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class CMissile : public CGameObject {
 public:
-	CMissile(float fEffectiveRange);
+	CMissile(float fEffectiveRange = 150);
 	~CMissile() {};
 
 

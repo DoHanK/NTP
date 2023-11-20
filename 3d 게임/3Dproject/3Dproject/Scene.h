@@ -6,7 +6,7 @@
 #include "CMeshManager.h"
 #include "CUiManager.h"
 #include "Player.h"
-
+#include "GameObject.h"
 
 #define MAX_LIGHTS			16 
 
@@ -14,6 +14,7 @@
 #define SPOT_LIGHT			2
 #define DIRECTIONAL_LIGHT	3
 
+class CMissile;
 
 
 struct LIGHT
@@ -44,7 +45,7 @@ struct LIGHTS
 class CScene
 {public:
 
-	CScene();
+	CScene() {};
 	~CScene() {};
 	
 	bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);

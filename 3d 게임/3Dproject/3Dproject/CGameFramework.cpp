@@ -521,7 +521,7 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				break;
 			case VK_CONTROL:
 				((CTanker*)m_pPlayer)->FireMissile();
-				InitBulletInfoInPlaying();
+			
 				break;
 			case 'X':
 				((CTanker*)m_pPlayer)->SetMine();
@@ -879,6 +879,7 @@ void CGameFrameWork::FrameAdvance() {
 		ServerFrameRate += 1;
 		if (ServerFrameRate > SERVERTICK) {
 			SendPlayerInfoInPlaying();
+			SendBulletInfoInPlaying();
 			ServerFrameRate = 0;
 		}
 	}
@@ -1450,20 +1451,25 @@ void CGameFrameWork::SendPlayerInfoInPlaying()
 	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
 }
 
-void CGameFrameWork::InitBulletInfoInPlaying()
+void CGameFrameWork::SendBulletInfoInPlaying()
 {
 	//위치 상태 전송.
-	CS_BULLET_PACKET p;
-	p.size = sizeof(CS_BULLET_PACKET);
-	p.type = CS_MOVE;
-	p.pos = m_pPlayer->GetPosition();
-	p.damage = 10;
-	p.index = m_myid;
-	p.dir = XMFLOAT3(m_pPlayer->TopTransform._11, m_pPlayer->TopTransform._12, m_pPlayer->TopTransform._13);
-	
+	for (int i = 0; i < BULLETS; ++i) {
 
-	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
-	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
+			CS_BULLET_PACKET p;
+			p.size = sizeof(CS_BULLET_PACKET);
+			p.type = CS_BULLET;
+			p.pos = m_pPlayer->m_ppBullets[i]->GetPosition();
+			p.damage = 10;
+			p.index = i;
+			p.dir = m_pPlayer->m_ppBullets[i]->GetLook();
+
+
+			memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
+			send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+		}
+	}
 
 }
 
@@ -1556,7 +1562,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 	case SC_BULLET: {
 		SC_BULLET_PACKET* p = reinterpret_cast<SC_BULLET_PACKET*>(packet);
 		if (m_myid == p->id) {
-			//자신이 죽었을 때 
+		
 		}
 		else {
 			m_pScene->InitBullet(p);
