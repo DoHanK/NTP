@@ -192,4 +192,6 @@ public:
 	void SendReadyState();
 	//플레이어 위치 정보 전송
 	void SendPlayerInfoInPlaying();
+
+	void InitBulletInfoInPlaying();
 };

@@ -496,46 +496,49 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			}
 		}
 	}
+	else {
 
 
-	
 
-	switch (nMessageID) {
-	case WM_KEYUP:
-		switch (wParam) {
-		case VK_ESCAPE:
-			::PostQuitMessage(0);
+
+		switch (nMessageID) {
+		case WM_KEYUP:
+			switch (wParam) {
+			case VK_ESCAPE:
+				::PostQuitMessage(0);
+				break;
+			case VK_RETURN:
+				break;
+			case VK_F8:
+				break;
+			case VK_F9:
+				ChangeSwapChainState();
+				break;
+			case VK_F1:
+			case VK_F2:
+			case VK_F3:
+				if (m_pPlayer) m_pCamera = ((CTanker*)m_pPlayer)->ChangeCamera((wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
+				break;
+			case VK_CONTROL:
+				((CTanker*)m_pPlayer)->FireMissile();
+				InitBulletInfoInPlaying();
+				break;
+			case 'X':
+				((CTanker*)m_pPlayer)->SetMine();
+				break;
+			case 'B':
+				if (m_bRenderBoundingBox) m_bRenderBoundingBox = false;
+				else  m_bRenderBoundingBox = true;
+				break;
+			case 'R':
+				m_pPlayer->SetPosition(XMFLOAT3(0, 2, 0));
+			default:
+				break;
+			}
 			break;
-		case VK_RETURN:
-			break;
-		case VK_F8:
-			break;
-		case VK_F9:
-			ChangeSwapChainState();
-			break;
-		case VK_F1:
-		case VK_F2:
-		case VK_F3:
-			if (m_pPlayer) m_pCamera = ((CTanker*)m_pPlayer)->ChangeCamera((wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
-			break;
-		case VK_CONTROL:
-			((CTanker*)m_pPlayer)->FireMissile();
-			break;
-		case 'X':
-			((CTanker*)m_pPlayer)->SetMine();
-			break;
-		case 'B':
-			if (m_bRenderBoundingBox) m_bRenderBoundingBox = false;
-			else  m_bRenderBoundingBox = true;
-			break;
-		case 'R':
-			m_pPlayer->SetPosition(XMFLOAT3(0, 2, 0));
 		default:
 			break;
 		}
-		break;
-	default:
-		break;
 	}
 }
 
@@ -1447,6 +1450,23 @@ void CGameFrameWork::SendPlayerInfoInPlaying()
 	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
 }
 
+void CGameFrameWork::InitBulletInfoInPlaying()
+{
+	//위치 상태 전송.
+	CS_BULLET_PACKET p;
+	p.size = sizeof(CS_BULLET_PACKET);
+	p.type = CS_MOVE;
+	p.pos = m_pPlayer->GetPosition();
+	p.damage = 10;
+	p.index = m_myid;
+	p.dir = XMFLOAT3(m_pPlayer->TopTransform._11, m_pPlayer->TopTransform._12, m_pPlayer->TopTransform._13);
+	
+
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
+	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+
+}
+
 
 
 
@@ -1514,7 +1534,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 	break;
 	case SC_MOVE_PLAYER: {
 		SC_MOVE_PLAYER_PACKET* p = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
-
+		//내 외에 움직일때 
 		if (m_myid != p->id) {
 			m_OtherPlayer[p->id].status.topDir = p->top_dir;
 			m_OtherPlayer[p->id].status.bottomDir = p->bottom_dir;
@@ -1523,8 +1543,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		}
 		break;
 	}
-	case SC_REMOVE_PLAYER:
-	{
+	case SC_REMOVE_PLAYER:{
 		SC_REMOVE_PLAYER_PACKET*p= reinterpret_cast<SC_REMOVE_PLAYER_PACKET*>(packet);
 		if (m_myid == p->id) {
 			//자신이 죽었을 때 
@@ -1534,7 +1553,16 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		}
 		break;
 	}
-
+	case SC_BULLET: {
+		SC_BULLET_PACKET* p = reinterpret_cast<SC_BULLET_PACKET*>(packet);
+		if (m_myid == p->id) {
+			//자신이 죽었을 때 
+		}
+		else {
+			m_pScene->InitBullet(p);
+		}
+		break;
+	}
 
 	}
 

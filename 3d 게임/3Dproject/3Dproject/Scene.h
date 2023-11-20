@@ -98,6 +98,8 @@ class CScene
 
 	ID3D12Resource* m_pd3dcbLights = NULL;
 	LIGHTS* m_pcbMappedLights = NULL;
+	
+	CMissile AllBullets[MAX_USER][BULLETS];
 
 	//충돌함수
 	//씬의 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 
@@ -116,7 +118,7 @@ class CScene
 	//게임 업데이트
 	void UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id);
 	void ReomvePlayer(int id);
-
+	void InitBullet(void* packet);
 protected:
 //배치처리를 위한 씬을 세이더들의 리스트로 표현
 	CShader* m_pShaders = NULL;

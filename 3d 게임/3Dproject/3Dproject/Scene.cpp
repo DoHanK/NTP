@@ -310,6 +310,15 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 		 pBillboard->m_TextureAddr = m_MeshManager->BringTexture(pd3dDevice, pd3dCommandList, "Texture/Effect/Explosion.dds");
 		 m_SubBillBoardList.push_back(pBillboard);
 	 }
+
+	 //모든 총알 초기화
+
+	 for (int i = 0; i < MAX_USER; ++i) {
+
+		 for (int j = 0; j < BULLETS; ++j) {
+			 AllBullets[i][j].m_bActive = false;
+		 } 
+	 }
 }
 
 void CScene::ReleaseObjects() {
@@ -852,4 +861,29 @@ void CScene::UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id){
 
 void CScene::ReomvePlayer(int id) {
 	CTankObjects[id]->m_bActive = false;
+}
+
+void CScene::InitBullet(void* packet)
+{
+	SC_BULLET_PACKET* p = reinterpret_cast<SC_BULLET_PACKET*>(packet);
+
+	if (p->color == 0) {
+		AllBullets[p->id][p->index].m_TextureAddr = m_MeshManager->BringTexture("Texture/TankBlue.dds");
+	}
+	else if (p->color == 1) {
+		AllBullets[p->id][p->index].m_TextureAddr = m_MeshManager->BringTexture("Texture/TankRed.dds");
+	}
+	else if (p->color == 2) {
+		AllBullets[p->id][p->index].m_TextureAddr = m_MeshManager->BringTexture("Texture/TankGreen.dds");
+	}
+	else if (p->color == 3) {
+		AllBullets[p->id][p->index].m_TextureAddr = m_MeshManager->BringTexture("Texture/TankYellow.dds");
+	}
+
+	AllBullets[p->id][p->index].SetMovingDirection(p->dir);
+	AllBullets[p->id][p->index].SetFirePosition(p->pos);
+	AllBullets[p->id][p->index].SetActive(true);
+
+
+
 }
