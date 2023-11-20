@@ -1558,7 +1558,7 @@ void CGameFrameWork::SendBulletInfoInPlaying()
 void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함수
 {
 	cout << "process_packet called" << endl;
-	switch (packet[1]) {
+	switch (packet[2]) {
 	case SC_LOGIN_INFO: {
 		cout << "Recv Login Info Packet Server ! " << endl;
 		SC_LOGIN_INFO_PACKET* p = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(packet);
