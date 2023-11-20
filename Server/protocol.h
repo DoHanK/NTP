@@ -130,21 +130,12 @@ struct SC_HITTED_PACKET {																															// S -> C 피격 패킷
 };
 
 struct SC_BULLET_PACKET {																															// S -> C 총알 패킷
-	unsigned char	size;
-	char			type;
-	int				id;
-	int				index;
-	int				color;
-	XMFLOAT3		pos;
-	XMFLOAT3		dir;
-};
-
-struct SC_REMOVE_BULLET_PACKET {
-	unsigned char	size;
-	char			type;
-	int				id;
-	int				index;
-	bool			in_use;
+	unsigned char							size;
+	char									type;
+	short									id;
+	std::array<XMFLOAT3, MAX_BULLETS>		bullets_pos;
+	std::array<XMFLOAT3, MAX_BULLETS>		bullets_dir;
+	std::array<bool, MAX_BULLETS>			in_use_bullets;
 };
 
 struct SC_READY_PACKET {

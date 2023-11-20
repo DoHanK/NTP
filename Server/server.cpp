@@ -6,6 +6,8 @@
 #include <mutex>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
+#include <iterator>
 
 #include <WinSock2.h>
 #include <MSWSock.h>
@@ -37,10 +39,11 @@ private:
 	XMFLOAT3 pos;
 	XMFLOAT3 topDir;
 	XMFLOAT3 bottomDir;
+	
+public:
 	array<XMFLOAT3, MAX_BULLETS> bullets_pos;
 	array<XMFLOAT3, MAX_BULLETS> bullets_dir;
 	array<bool, MAX_BULLETS> in_use_bullets;
-public:
 	// setter
 	void change_hp(int Hp) {
 		hp = Hp;
@@ -56,15 +59,6 @@ public:
 	}
 	void change_bottom_dir(XMFLOAT3 BottomDir) {
 		bottomDir = BottomDir;
-	}
-	void change_bullet_pos(int index , XMFLOAT3 Pos) {
-		bullets_pos[index] = Pos;
-	}
-	void change_bullet_dir(int index, XMFLOAT3 Pos) {
-		bullets_dir[index] = Pos;
-	}
-	void change_bullet_status(int index, bool in_use) {
-		in_use_bullets[index] = in_use;
 	}
 
 	// getter
@@ -83,16 +77,6 @@ public:
 	XMFLOAT3 get_bottom_dir() {
 		return bottomDir;
 	}
-	XMFLOAT3 get_bullet_pos(int index) {
-		return bullets_pos[index];
-	}
-	XMFLOAT3 get_bullet_dir(int index) {
-		return bullets_dir[index];
-	}
-	bool get_bullet_status(int index) {
-		return in_use_bullets[index];
-	}
-
 };
 
 class SESSION {
@@ -125,7 +109,7 @@ public:
 		ready = false;
 		memset(remainBuffer, 0, sizeof(remainBuffer));
 		for (int i = 0; i < 30; ++i) {
-			status.change_bullet_status(i, false);
+			status.in_use_bullets[i] = false;
 		}
 	}
 
@@ -196,8 +180,7 @@ public:
 	void send_hitted_packet(int c_id);
 	void send_game_start_packet();
 	void send_remove_player_packet(int c_id);
-	void send_bullet_packet(int c_id, int index);
-	void send_remove_bullet_packet(int c_id, int index);
+	void send_bullet_packet(int c_id);
 };
 
 array<SESSION, MAX_USER> clients;																												// 클라이언트 배열 생성
@@ -266,27 +249,15 @@ void SESSION::send_remove_player_packet(int c_id)
 	do_send(&p);
 }
 
-void SESSION::send_bullet_packet(int c_id, int Index)
+void SESSION::send_bullet_packet(int c_id)
 {
 	SC_BULLET_PACKET p;
 	p.size = sizeof(SC_BULLET_PACKET);
 	p.type = SC_BULLET;
 	p.id = c_id;
-	p.index = Index;
-	p.color = color;
-	p.pos = status.get_bullet_pos(Index);
-	p.dir = status.get_bullet_dir(Index);
-	do_send(&p);
-}
-
-void SESSION::send_remove_bullet_packet(int c_id, int Index)
-{
-	SC_REMOVE_BULLET_PACKET p;
-	p.size = sizeof(SC_REMOVE_BULLET_PACKET);
-	p.type = SC_REMOVE_BULLET;
-	p.id = c_id;
-	p.index = Index;
-	p.in_use = false;
+	memcpy(&p.bullets_pos,&clients[c_id].status.bullets_pos, sizeof(clients[c_id].status.bullets_pos));
+	memcpy(&p.bullets_dir,&clients[c_id].status.bullets_dir, sizeof(clients[c_id].status.bullets_dir));
+	memcpy(&p.in_use_bullets,&clients[c_id].status.in_use_bullets, sizeof(clients[c_id].status.in_use_bullets));
 	do_send(&p);
 }
 
@@ -299,7 +270,6 @@ void SESSION::send_hitted_packet(int c_id)
 	p.hp = clients[c_id].status.get_hp();
 	do_send(&p);
 }
-
 
 void process_packet(int c_id, char* packet)
 {
@@ -411,20 +381,18 @@ void process_packet(int c_id, char* packet)
 	}
 	case CS_BULLET: {
 		CS_BULLET_PACKET* p = reinterpret_cast<CS_BULLET_PACKET*>(packet);
-		for (int i = 0; i < MAX_BULLETS; ++i) {
-			clients[c_id].status.change_bullet_pos(i, p->bullets_pos[i]);
-			clients[c_id].status.change_bullet_dir(i, p->bullets_dir[i]);
-			clients[c_id].status.change_bullet_status(i, p->in_use_bullets[i]);
-		}
+		memcpy(&clients[c_id].status.bullets_pos, &p->bullets_pos,sizeof(p->bullets_pos));
+		memcpy(&clients[c_id].status.bullets_dir, &p->bullets_dir,sizeof(p->bullets_dir));
+		memcpy(&clients[c_id].status.in_use_bullets, &p->in_use_bullets,sizeof(p->in_use_bullets));
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
 				continue;
 			if (pl.id == c_id)
 				continue;
-			//pl.send_bullet_packet(c_id, p->index);
+			pl.send_bullet_packet(c_id);
 		}
 	}
-	case CS_ATTACK: {
+	/*case CS_ATTACK: {
 		CS_ATTACK_PACKET* p = reinterpret_cast<CS_ATTACK_PACKET*>(packet);
 		if (p->id != -1) {
 			clients[p->id].status.change_hp(-10);
@@ -442,7 +410,7 @@ void process_packet(int c_id, char* packet)
 			}
 			pl.send_remove_bullet_packet(c_id, p->bullet_index);
 		}
-	}
+	}*/
 	}
 }
 
