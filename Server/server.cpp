@@ -422,7 +422,7 @@ void process_packet(int c_id, char* packet)
 			if (pl.id == c_id)
 				continue;
 			tank = pl.status.get_pos();
-			bullet = clients[c_id].status.get_bullet_pos();
+			bullet = clients[c_id].status.get_bullet_pos(p->index);
 			if (((tank.x - bullet.x) < -50.f) || ((tank.x - bullet.x) > 50.f))
 				continue;
 			if (((tank.z - bullet.z) < -50.f) || ((tank.z - bullet.z) > 50.f))
