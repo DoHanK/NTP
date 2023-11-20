@@ -37,9 +37,9 @@ private:
 	XMFLOAT3 pos;
 	XMFLOAT3 topDir;
 	XMFLOAT3 bottomDir;
-	array<XMFLOAT3, 30> bullets_pos;
-	array<XMFLOAT3, 30> bullets_dir;
-	array<bool, 30> in_use_bullets;
+	array<XMFLOAT3, MAX_BULLETS> bullets_pos;
+	array<XMFLOAT3, MAX_BULLETS> bullets_dir;
+	array<bool, MAX_BULLETS> in_use_bullets;
 public:
 	// setter
 	void change_hp(int Hp) {
@@ -411,23 +411,17 @@ void process_packet(int c_id, char* packet)
 	}
 	case CS_BULLET: {
 		CS_BULLET_PACKET* p = reinterpret_cast<CS_BULLET_PACKET*>(packet);
-		clients[c_id].status.change_bullet_status(p->index, true);
-		clients[c_id].status.change_bullet_pos(p->index, p->pos);
-		clients[c_id].status.change_bullet_dir(p->index, p->dir);
-		XMFLOAT3 tank;
-		XMFLOAT3 bullet;
+		for (int i = 0; i < MAX_BULLETS; ++i) {
+			clients[c_id].status.change_bullet_pos(i, p->bullets_pos[i]);
+			clients[c_id].status.change_bullet_dir(i, p->bullets_dir[i]);
+			clients[c_id].status.change_bullet_status(i, p->in_use_bullets[i]);
+		}
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
 				continue;
 			if (pl.id == c_id)
 				continue;
-			tank = pl.status.get_pos();
-			bullet = clients[c_id].status.get_bullet_pos();
-			if (((tank.x - bullet.x) < -50.f) || ((tank.x - bullet.x) > 50.f))
-				continue;
-			if (((tank.z - bullet.z) < -50.f) || ((tank.z - bullet.z) > 50.f))
-				continue;
-			pl.send_bullet_packet(c_id, p->index);
+			//pl.send_bullet_packet(c_id, p->index);
 		}
 	}
 	case CS_ATTACK: {
