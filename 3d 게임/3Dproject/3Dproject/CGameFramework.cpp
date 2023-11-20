@@ -1544,7 +1544,7 @@ void CGameFrameWork::SendBulletInfoInPlaying()
 
 		}
 		else {
-			p.in_use_bullets[i] = true;
+			p.in_use_bullets[i] = false;
 		}
 	}
 	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
