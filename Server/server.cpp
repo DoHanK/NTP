@@ -132,7 +132,7 @@ public:
 		int remain_data = recvLen + remainLen;
 		char* p = remainBuffer;
 		while (remain_data > 0) {
-			int packet_size = p[0];
+			int packet_size = p[1]*256+p[0];
 			if (packet_size <= remain_data) {
 				process_packet(id, p);
 				p = p + packet_size;
@@ -148,7 +148,7 @@ public:
 
 	void do_send(void* packet)																																// 데이터 송신
 	{
-		sendLen = int(reinterpret_cast<char*>(packet)[0]);
+		sendLen = unsigned int(reinterpret_cast<char*>(packet)[1] * 256 + reinterpret_cast<char*>(packet)[0]);
 		memcpy(sendBuffer, reinterpret_cast<char*>(packet),sendLen);
 		sendLen = send(socket, sendBuffer, sendLen, 0);
 		if (sendLen == SOCKET_ERROR) {
@@ -274,7 +274,7 @@ void SESSION::send_hitted_packet(int c_id)
 void process_packet(int c_id, char* packet)
 {
 	//cout << "process_packet called" << endl;
-	switch (packet[1]) {
+	switch (packet[2]) {
 	case CS_LOGIN: {
 		std::cout << "Recv Login Packet From Client Num : " << c_id << endl;
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
