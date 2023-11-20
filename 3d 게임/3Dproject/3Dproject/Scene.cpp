@@ -3,7 +3,7 @@
 #include "Shader.h"
 #include "GameObject.h"
 
-CScene::CScene() {}
+
 
 //1000000 x 1000000 x 1000000 싸이즈의 스카이맵
 
@@ -316,6 +316,7 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 	 for (int i = 0; i < MAX_USER; ++i) {
 
 		 for (int j = 0; j < BULLETS; ++j) {
+			 AllBullets[i][j].m_pMesh = m_MeshManager->BringMesh("Models/Missile.bin");
 			 AllBullets[i][j].m_bActive = false;
 		 } 
 	 }
@@ -543,7 +544,7 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamrea
 	pd3dCommandList->SetGraphicsRootConstantBufferView(2, d3dcbLightsGpuVirtualAddress); //Lights
 
 
-	
+
 	//텍스쳐 전달
 	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
 	pd3dCommandList->SetDescriptorHeaps(1, &m_MeshManager->pSrvDescriptorHeap);
@@ -558,12 +559,12 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamrea
 	//씬을 렌더링하는 것은 씬을 구성하는 게임 객체(셰이더를 포함하는 객체)들을 렌더링하는 것이다.
 
 	m_pCllluminatedShader->OnPrepareRender(pd3dCommandList, 1);
-	for(CGameObject* object :CGameObjects){
+	for (CGameObject* object : CGameObjects) {
 		object->UpdateAllTansform();
 		object->Render(pd3dCommandList, pCamrea);
 		m_pCllluminatedShader->OnPrepareRender(pd3dCommandList, 0);
-	}	
-	for(CGameObject* object :m_CGameBackGround){
+	}
+	for (CGameObject* object : m_CGameBackGround) {
 		object->UpdateAllTansform();
 		object->Render(pd3dCommandList, pCamrea);
 
@@ -588,6 +589,18 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamrea
 		if (object->m_bActive) {
 			object->UpdateAllTansform();
 			object->Render(pd3dCommandList, pCamrea);
+		}
+	}
+
+	//상대편 총알
+	for (int id = 0; id < MAX_USER; ++id) {
+		for (int i = 0; i < BULLETS; ++i) {
+			if (AllBullets[id][i].m_bActive) {
+
+				AllBullets[id][i].UpdateAllTansform();
+				AllBullets[id][i].Render(pd3dCommandList, pCamrea);
+			}
+
 		}
 	}
 	
@@ -666,6 +679,8 @@ void CScene::RenderBoundingBox(ID3D12GraphicsCommandList* pd3dCommandList, CCame
 			m_pPlayer->m_pMine[i]->RenderBoundingBox(pd3dCommandList, pCamera);
 		}
 	}
+
+
 }
 
 void CScene::BulletToTank()
@@ -879,6 +894,24 @@ void CScene::InitBullet(void* packet)
 	else if (p->color == 3) {
 		AllBullets[p->id][p->index].m_TextureAddr = m_MeshManager->BringTexture("Texture/TankYellow.dds");
 	}
+
+	AllBullets[p->id][p->index].m_xmf4x4World._11 = p->dir.x;
+	AllBullets[p->id][p->index].m_xmf4x4World._12 = p->dir.y;
+	AllBullets[p->id][p->index].m_xmf4x4World._13 = p->dir.z;
+	AllBullets[p->id][p->index].m_xmf4x4World._14 = 0;
+
+	AllBullets[p->id][p->index].m_xmf4x4World._21  = 0;
+	AllBullets[p->id][p->index].m_xmf4x4World._22  = 1.0f;
+	AllBullets[p->id][p->index].m_xmf4x4World._23  = 0;
+	AllBullets[p->id][p->index].m_xmf4x4World._24  = 0.0f;
+
+	XMFLOAT3 LookVector = Vector3::CrossProduct(p->dir, XMFLOAT3(0, 1, 0));
+		AllBullets[p->id][p->index].m_xmf4x4World._21 = LookVector.x;
+		AllBullets[p->id][p->index].m_xmf4x4World._22 = LookVector.y;
+		AllBullets[p->id][p->index].m_xmf4x4World._23 = LookVector.z;
+		AllBullets[p->id][p->index].m_xmf4x4World._24 = 1.0f;
+
+
 
 	AllBullets[p->id][p->index].SetMovingDirection(p->dir);
 	AllBullets[p->id][p->index].SetFirePosition(p->pos);
