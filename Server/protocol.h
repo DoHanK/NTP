@@ -1,4 +1,5 @@
 #include <DirectXMath.h>
+#include <array>
 using namespace DirectX;
 
 constexpr int PORT_NUM = 4000;

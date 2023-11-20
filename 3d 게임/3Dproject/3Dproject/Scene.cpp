@@ -878,44 +878,45 @@ void CScene::ReomvePlayer(int id) {
 	CTankObjects[id]->m_bActive = false;
 }
 
-void CScene::InitBullet(void* packet)
+void CScene::RefleshBullet(void* packet)
 {
 	SC_BULLET_PACKET* p = reinterpret_cast<SC_BULLET_PACKET*>(packet);
 
-	if (p->color == 0) {
-		AllBullets[p->id][p->index].m_TextureAddr = m_MeshManager->BringTexture("Texture/TankBlue.dds");
+
+
+	for (int i = 0; i < BULLETS; ++i) {
+		
+		if (p->in_use_bullets[i]) {
+
+			std::array<XMFLOAT3, MAX_BULLETS>		bullets_pos;
+			std::array<XMFLOAT3, MAX_BULLETS>		bullets_dir;
+			AllBullets[p->id][i].m_xmf4x4World._11 = p->bullets_dir[i].x;
+			AllBullets[p->id][i].m_xmf4x4World._12 = p->bullets_dir[i].y;
+			AllBullets[p->id][i].m_xmf4x4World._13 = p->bullets_dir[i].z;
+			AllBullets[p->id][i].m_xmf4x4World._14 = 0;
+
+			AllBullets[p->id][i].m_xmf4x4World._21 = 0;
+			AllBullets[p->id][i].m_xmf4x4World._22 = 1.0f;
+			AllBullets[p->id][i].m_xmf4x4World._23 = 0;
+			AllBullets[p->id][i].m_xmf4x4World._24 = 0.0f;
+
+			XMFLOAT3 LookVector = Vector3::CrossProduct(p->bullets_dir[i], XMFLOAT3(0, 1, 0));
+			AllBullets[p->id][i].m_xmf4x4World._21 = LookVector.x;
+			AllBullets[p->id][i].m_xmf4x4World._22 = LookVector.y;
+			AllBullets[p->id][i].m_xmf4x4World._23 = LookVector.z;
+			AllBullets[p->id][i].m_xmf4x4World._24 = 1.0f;
+
+
+
+			AllBullets[p->id][i].SetMovingDirection(p->bullets_dir[i]);
+			AllBullets[p->id][i].SetFirePosition(p->bullets_pos[i]);
+			AllBullets[p->id][i].SetActive(true);
+
+		}
+		else {
+			AllBullets[p->id][i].SetActive(false);
+		}
 	}
-	else if (p->color == 1) {
-		AllBullets[p->id][p->index].m_TextureAddr = m_MeshManager->BringTexture("Texture/TankRed.dds");
-	}
-	else if (p->color == 2) {
-		AllBullets[p->id][p->index].m_TextureAddr = m_MeshManager->BringTexture("Texture/TankGreen.dds");
-	}
-	else if (p->color == 3) {
-		AllBullets[p->id][p->index].m_TextureAddr = m_MeshManager->BringTexture("Texture/TankYellow.dds");
-	}
-
-	AllBullets[p->id][p->index].m_xmf4x4World._11 = p->dir.x;
-	AllBullets[p->id][p->index].m_xmf4x4World._12 = p->dir.y;
-	AllBullets[p->id][p->index].m_xmf4x4World._13 = p->dir.z;
-	AllBullets[p->id][p->index].m_xmf4x4World._14 = 0;
-
-	AllBullets[p->id][p->index].m_xmf4x4World._21  = 0;
-	AllBullets[p->id][p->index].m_xmf4x4World._22  = 1.0f;
-	AllBullets[p->id][p->index].m_xmf4x4World._23  = 0;
-	AllBullets[p->id][p->index].m_xmf4x4World._24  = 0.0f;
-
-	XMFLOAT3 LookVector = Vector3::CrossProduct(p->dir, XMFLOAT3(0, 1, 0));
-		AllBullets[p->id][p->index].m_xmf4x4World._21 = LookVector.x;
-		AllBullets[p->id][p->index].m_xmf4x4World._22 = LookVector.y;
-		AllBullets[p->id][p->index].m_xmf4x4World._23 = LookVector.z;
-		AllBullets[p->id][p->index].m_xmf4x4World._24 = 1.0f;
-
-
-
-	AllBullets[p->id][p->index].SetMovingDirection(p->dir);
-	AllBullets[p->id][p->index].SetFirePosition(p->pos);
-	AllBullets[p->id][p->index].SetActive(true);
 
 
 

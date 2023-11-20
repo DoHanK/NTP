@@ -1454,22 +1454,29 @@ void CGameFrameWork::SendPlayerInfoInPlaying()
 void CGameFrameWork::SendBulletInfoInPlaying()
 {
 	//위치 상태 전송.
-	for (int i = 0; i < BULLETS; ++i) {
-
-		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
 			CS_BULLET_PACKET p;
 			p.size = sizeof(CS_BULLET_PACKET);
 			p.type = CS_BULLET;
-			p.pos = m_pPlayer->m_ppBullets[i]->GetPosition();
-			p.damage = 10;
-			p.index = i;
-			p.dir = m_pPlayer->m_ppBullets[i]->GetLook();
+	for (int i = 0; i < BULLETS; ++i) {
 
+		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
+			p.in_use_bullets[i] = true;
+			XMFLOAT3 temp = XMFLOAT3(m_pPlayer->m_ppBullets[i]->m_xmf4x4World._11
+				, m_pPlayer->m_ppBullets[i]->m_xmf4x4World._12
+				, m_pPlayer->m_ppBullets[i]->m_xmf4x4World._13);
+			p.bullets_dir[i] = temp;
+			temp = XMFLOAT3(m_pPlayer->m_ppBullets[i]->m_xmf4x4World._41
+				, m_pPlayer->m_ppBullets[i]->m_xmf4x4World._42
+				, m_pPlayer->m_ppBullets[i]->m_xmf4x4World._43);
+			p.bullets_pos[i] = temp;
 
-			memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
-			send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+		}
+		else {
+			p.in_use_bullets[i] = true;
 		}
 	}
+	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
+	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
 
 }
 
@@ -1523,6 +1530,24 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		m_pScoreManager->DeleteAllRect();
 		MakePlayButton();
 		m_PreGameState = m_GameState = PlayStage;
+		for (int id = 0; id < MAX_USER; ++id) {
+			for (int i = 0; i < BULLETS; ++i) {
+				
+				
+				if (m_OtherPlayer[id].color == 0) {
+					m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementBlue.dds");
+				}
+				else if (m_OtherPlayer[id].color == 1) {
+					m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementRed.dds");
+				}
+				else if (m_OtherPlayer[id].color == 2) {
+					m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementGreen.dds");
+				}
+				else if (m_OtherPlayer[id].color == 3) {
+					m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementYellow.dds");
+				}
+			}
+		}
 	}break;
 	case SC_ADD_PLAYER: {
 		SC_ADD_PLAYER_PACKET* p= reinterpret_cast<SC_ADD_PLAYER_PACKET*>(packet);
@@ -1565,7 +1590,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		
 		}
 		else {
-			m_pScene->InitBullet(p);
+			m_pScene->RefleshBullet(p);
 		}
 		break;
 	}
