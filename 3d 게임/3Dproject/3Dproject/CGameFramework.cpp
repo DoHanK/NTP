@@ -931,7 +931,8 @@ void CGameFrameWork::FrameAdvance() {
 
 	if (m_pScene) m_pScene->Render(m_pd3dCommandList, m_pCamera);
 
-	if (m_pPlayer) ((CTanker*)(m_pPlayer))->Render(m_pd3dCommandList, m_pCamera);
+	if (m_pPlayer)if(m_pPlayer->m_bActive)
+		((CTanker*)(m_pPlayer))->Render(m_pd3dCommandList, m_pCamera);
 
 
 	if (m_bRenderBoundingBox) m_pScene->RenderBoundingBox(m_pd3dCommandList, m_pCamera);
@@ -1691,7 +1692,8 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 	case SC_REMOVE_PLAYER:{
 		SC_REMOVE_PLAYER_PACKET*p= reinterpret_cast<SC_REMOVE_PLAYER_PACKET*>(packet);
 		if (m_myid == p->id) {
-			//자신이 죽었을 때 
+			m_pPlayer->m_bActive = false;
+			
 		}
 		else {
 			for (auto &m : m_pScene->m_BillBoardList) {
