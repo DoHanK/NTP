@@ -1301,6 +1301,7 @@ void CGameFrameWork::MakeGameStage()
 	//580
 
 	//650
+	
 
 
 	//color 
@@ -1311,7 +1312,22 @@ void CGameFrameWork::MakeGameStage()
 	//player 3
 	m_pUIManager->CreateUIRect(640, 690, 0, 110, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/Number/alpha.dds"));
 
+	for (int id = 0; id < MAX_USER; ++id) {
+		if (m_OtherPlayer[id].id >= 0) {
+			for (int i = 0; i < 10; ++i) {
+				m_pUIManager->CreateUIRect(485 + 70 * id, 495 + 70 * id, 0 + 20 * i, 20 + 20 * i, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/HpRed.dds"));
+			}
+		}
 
+	}
+
+
+	for (int id = 0; id < MAX_USER; ++id) {
+		if (m_OtherPlayer[id].id >= 0) {
+			m_pUIManager->CreateUIRect(485 + 70 * id, 495 + 70 * id, 0, 200, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/HpGrey.dds"));
+		}
+
+	}
 }
 
 
@@ -1347,21 +1363,12 @@ void CGameFrameWork::InitPlayerGameStage()
 			}
 		}
 
-		if (m_OtherPlayer[id].id >= 0) {
-			for (int i = 0; i < 10; ++i) {
-				m_pUIManager->CreateUIRect(485 + 70 * id, 495 + 70 * id, 0 + 20 * i, 20 + 20 * i, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/HpRed.dds"));
-			}
-		}
+		
 
 	}
 
 
-	for (int id = 0; id < MAX_USER; ++id) {
-		if (m_OtherPlayer[id].id >= 0) {
-			m_pUIManager->CreateUIRect(485 + 70 * id, 495 + 70 * id, 0, 200, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/HpGrey.dds"));
-		}
-
-	}
+	
 }
 
 void CGameFrameWork::ChangeHPUI()
@@ -1680,8 +1687,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			m_OtherPlayer[p->id].userName = p->name;
 			m_OtherPlayer[p->id].color = p->color;
 			m_OtherPlayer[p->id].pos_num = p->pos_num;
+			m_OtherPlayer[p->id].status.change_hp(100);
 			PrintPlayerInfo("방입장 성공", p->id);
-
+			
 			AddPlayerReadyStage(p->id);
 			//PrintPlayerInfo("방입장 성공",p->id);
 		}
@@ -1791,7 +1799,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			m_pScoreManager->DeleteAllRect();
 			MakeGameStage();
 			InitPlayerGameStage();
-
+			
 		}
 		break;
 	}
