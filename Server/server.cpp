@@ -133,7 +133,7 @@ public:
 		char* p = remainBuffer;
 		while (remain_data > 0) {
 			
-			int packet_size = (reinterpret_cast<unsigned short*>(p))[0];
+			int packet_size = MAKEWORD(p[0], p[1]);;
 			if (packet_size <= remain_data) {
 				process_packet(id, p);
 				p = p + packet_size;
@@ -149,7 +149,7 @@ public:
 
 	void do_send(void* packet)																																// 데이터 송신
 	{
-		sendLen = int(reinterpret_cast<unsigned short*>(packet)[0]);
+		sendLen = int(MAKEWORD(reinterpret_cast<char*>(packet)[0], reinterpret_cast<char*>(packet)[1]));
 		memcpy(sendBuffer, reinterpret_cast<char*>(packet),sendLen);
 		sendLen = send(socket, sendBuffer, sendLen, 0);
 		if (sendLen == SOCKET_ERROR) {
