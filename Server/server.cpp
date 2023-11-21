@@ -404,7 +404,7 @@ void process_packet(int c_id, char* packet)
 			if (pl.in_use == false)
 				continue;
 
-			if (clients[p->id].status.get_hp() <= 10)
+			if (clients[p->id].status.get_hp() <= 0)
 				pl.send_remove_player_packet(p->id);
 			else
 				pl.send_hitted_packet(p->id);
