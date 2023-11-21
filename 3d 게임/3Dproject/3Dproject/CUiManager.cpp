@@ -5,9 +5,9 @@
 CUiManager::CUiManager(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList)
 {
 	m_pShader = new CUIShader();
-	m_pMesh.reserve(80);
+	m_pMesh.reserve(300);
 	//CUiRectMesh* pCUIRectMesh;
-	for (int i = 0; i < 80; i++) {
+	for (int i = 0; i < 300; i++) {
 
 		m_pMesh.push_back(new CUiRectMesh(pd3dDevice, pd3dCommandList));
 	}

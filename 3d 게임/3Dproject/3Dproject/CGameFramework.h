@@ -155,7 +155,7 @@ public:
 	
 	void EnterRoom();
 
-
+	void ChangeHPUI();
 	void MakeLoginButton();
 	void ShowInputName();
 	void Makemulticustomebutton();

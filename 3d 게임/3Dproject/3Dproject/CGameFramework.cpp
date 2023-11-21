@@ -388,7 +388,11 @@ void CGameFrameWork::BuildObjects() {
 	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/YellowAlpha.dds");
 
 	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/UIResource/back.dds");
-	
+
+	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/HpRed.dds");
+	m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/HpGrey.dds");
+
+
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	m_pScene = new CScene();
@@ -1310,12 +1314,10 @@ void CGameFrameWork::MakeGameStage()
 
 }
 
+
 void CGameFrameWork::InitPlayerGameStage()
 {
-
-
 	for (int id = 0; id < MAX_USER; ++id) {
-
 		if (m_OtherPlayer[id].id >= 0) {
 			//닉네임 입력
 			for (int i = 0; i < NameBufferSize - 1; i++) {
@@ -1344,9 +1346,54 @@ void CGameFrameWork::InitPlayerGameStage()
 
 			}
 		}
+
+		if (m_OtherPlayer[id].id >= 0) {
+			for (int i = 0; i < 10; ++i) {
+				m_pUIManager->CreateUIRect(485 + 70 * id, 495 + 70 * id, 0 + 20 * i, 20 + 20 * i, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/HpRed.dds"));
+			}
+		}
+
+	}
+
+
+	for (int id = 0; id < MAX_USER; ++id) {
+		if (m_OtherPlayer[id].id >= 0) {
+			m_pUIManager->CreateUIRect(485 + 70 * id, 495 + 70 * id, 0, 200, m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/HpGrey.dds"));
+		}
+
 	}
 }
 
+void CGameFrameWork::ChangeHPUI()
+{
+
+//(10 - hp를 10으로 나눈 몫)-> alpha의 개수 
+
+	
+	for (int i = 0; i < 10 - (m_OtherPlayer[0].status.hp / 10); i++) {
+		//21-30
+		m_pUIManager->RectList[30 - i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/alpha.dds");
+	}
+		
+		
+
+
+	for (int i = 0; i < 10 - (m_OtherPlayer[1].status.hp / 10); i++) {
+		//31-40
+		m_pUIManager->RectList[40 - i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/alpha.dds");
+	}
+		
+		
+
+	
+
+	for (int i = 0; i < 10 - (m_OtherPlayer[2].status.hp / 10); i++) {
+		//41-50
+		m_pUIManager->RectList[50 - i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/alpha.dds");
+	}
+	
+	
+}
 
 
 
@@ -1768,8 +1815,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			temp += "체력 :";
 			temp += std::to_string(p->hp);
 			OutputDebugStringA(temp.c_str());
+			ChangeHPUI();
 		}
-
+		
 		break;
 	}
 
