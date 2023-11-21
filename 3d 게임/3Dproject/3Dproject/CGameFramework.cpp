@@ -5,7 +5,7 @@
 
 #define _SERVER_TEST
 #define SERVERTICK 10
-
+#define SERVERINTERPOR 2
 
 CGameFrameWork::CGameFrameWork() {
 
@@ -914,6 +914,18 @@ void CGameFrameWork::FrameAdvance() {
 	
 	if (m_GameState == PlayStage)
 	{
+		//탱크 interporation	
+		if (m_pScene) {
+			auto pre =m_PreOtherPlayer.begin();
+			for (auto& m : m_OtherPlayer) {
+				if (m.id > -1) {
+					m_pScene->InterporationTank(m_EachSinkTick[m.id], *pre, m);
+
+					m_EachSinkTick[m.id]++;
+				}
+				pre++;
+			}
+		}
 
 			AnimateObjects();
 			SendHitBullet();
@@ -1682,10 +1694,22 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		SC_MOVE_PLAYER_PACKET* p = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
 		//내 외에 움직일때 
 		if (m_myid != p->id) {
-			m_OtherPlayer[p->id].status.topDir = p->top_dir;
-			m_OtherPlayer[p->id].status.bottomDir = p->bottom_dir;
-			m_OtherPlayer[p->id].status.pos = p->pos;
-			m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
+
+			//전의 이동을 움직임을 넣어주기
+			m_PreOtherPlayer[p->id].status.topDir = m_OtherPlayer[p->id].status.topDir;
+			m_PreOtherPlayer[p->id].status.bottomDir = m_OtherPlayer[p->id].status.bottomDir;
+			m_PreOtherPlayer[p->id].status.pos = m_OtherPlayer[p->id].status.pos;
+
+
+			m_OtherPlayer[p->id].status.topDir		= p->top_dir;
+			m_OtherPlayer[p->id].status.bottomDir	= p->bottom_dir;
+			m_OtherPlayer[p->id].status.pos			= p->pos;
+
+			m_EachSinkTick[p->id] = 0;
+			if (SERVERTICK < SERVERINTERPOR) { //2frame에 한번식 받으면 굳이 안해줌
+				m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
+			}
+	
 		}
 		break;
 	}

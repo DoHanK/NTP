@@ -101,6 +101,12 @@ class CScene
 	LIGHTS* m_pcbMappedLights = NULL;
 	
 	CMissile AllBullets[MAX_USER][BULLETS];
+	//총알 정보 담기
+	XMFLOAT3 AllBullets_pos[MAX_USER][BULLETS];
+	XMFLOAT3 AllBullets_prevpos[MAX_USER][BULLETS];
+
+
+
 
 	//충돌함수
 	//씬의 모든 게임 객체들에 대한 마우스 픽킹을 수행한다. 
@@ -113,6 +119,8 @@ class CScene
 	bool PlayerToObject();
 
 	void BulletToObject();
+
+	void InterporationTank(int& servertick, const SESSION& pre, const SESSION& now);
 
 	//레디 -> 다른 플레이어 정보 넣어주기
 	void InitOtherPlayer(std::array<SESSION, MAX_USER> &Players, int id);

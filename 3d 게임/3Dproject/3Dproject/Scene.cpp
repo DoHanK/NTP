@@ -2,8 +2,8 @@
 #include "Scene.h"
 #include "Shader.h"
 #include "GameObject.h"
-
-
+#define SERVERTICK 165
+#define SERVERINTERPOR 2
 
 //1000000 x 1000000 x 1000000 ½ÎÀÌÁîÀÇ ½ºÄ«ÀÌ¸Ê
 
@@ -784,6 +784,63 @@ void CScene::BulletToObject() {
 		}
 	}
 }
+
+void CScene::InterporationTank(int& servertick,const SESSION& pre,const SESSION& now)
+{
+	if (servertick > SERVERTICK)
+		servertick = SERVERTICK;
+	
+	float ftick = servertick / SERVERTICK;
+	XMFLOAT3 interBottomDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.bottomDir, 1 - ftick), Vector3::ScalarProduct(now.status.bottomDir, ftick)));
+	XMFLOAT3 intertopDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.topDir, 1 - ftick), Vector3::ScalarProduct(now.status.topDir, ftick)));
+	
+	XMFLOAT3 interpos = Vector3::Add(pre.status.pos, Vector3::ScalarProduct(Vector3::Subtract(now.status.pos, pre.status.pos), ftick));
+
+
+
+
+	XMFLOAT4X4 TempMatrix;
+	TempMatrix._11 = intertopDir.x;
+	TempMatrix._12 = intertopDir.y;
+	TempMatrix._13 = intertopDir.z;
+	TempMatrix._14 = 0.0f;
+	TempMatrix._21 = 0;
+	TempMatrix._22 = 1.0f;
+	TempMatrix._23 = 0;
+	TempMatrix._24 = 0.0f;
+	XMFLOAT3 LookVector = Vector3::CrossProduct(intertopDir, XMFLOAT3(0, 1, 0));
+	TempMatrix._31 = LookVector.x;
+	TempMatrix._32 = LookVector.y;
+	TempMatrix._33 = LookVector.z;
+	TempMatrix._34 = 0.0f;
+	TempMatrix._41 = interpos.x;
+	TempMatrix._42 = interpos.y;
+	TempMatrix._43 = interpos.z;
+	TempMatrix._44 = 1.0f;
+
+	//top Info
+	CTankObjects[now.id]->TopTransform = TempMatrix;
+
+	//top Info
+	TempMatrix._11 = interBottomDir.x;
+	TempMatrix._12 = interBottomDir.y;
+	TempMatrix._13 = interBottomDir.z;
+	LookVector = Vector3::CrossProduct(interBottomDir, XMFLOAT3(0, 1, 0));
+	TempMatrix._31 = LookVector.x;
+	TempMatrix._32 = LookVector.y;
+	TempMatrix._33 = LookVector.z;
+	CTankObjects[now.id]->BottomTransform = TempMatrix;
+
+
+
+	CTankObjects[now.id]->SetPosition(interpos);
+	CTankObjects[now.id]->UpdateBoundingBox();
+
+
+
+}
+
+
 
 void CScene::InitOtherPlayer(std::array<SESSION, MAX_USER>& Players , int id)
 {

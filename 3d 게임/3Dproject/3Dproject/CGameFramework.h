@@ -86,6 +86,9 @@ private:
 	int m_GameState = InitStage;
 	int m_PreGameState = InitStage;
 	std::array<SESSION,MAX_USER> m_OtherPlayer;																									// 통신 받은 다른 플레이어
+	std::array<SESSION,MAX_USER> m_PreOtherPlayer;						//과거 정보 담기			
+																		// 통신 받은 다른 플레이어
+	std::array<int,MAX_USER> m_EachSinkTick;							//과거 정보 담기																		// 통신 받은 다른 플레이어
 	SOCKET m_ServerSocket;
 	int		m_myid;
 	char	m_SendBuffer[BUF_SIZE];																												// SendBuffer
