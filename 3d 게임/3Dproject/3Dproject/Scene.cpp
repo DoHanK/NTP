@@ -2,8 +2,7 @@
 #include "Scene.h"
 #include "Shader.h"
 #include "GameObject.h"
-#define SERVERTICK 165
-#define SERVERINTERPOR 2
+
 
 //1000000 x 1000000 x 1000000 싸이즈의 스카이맵
 

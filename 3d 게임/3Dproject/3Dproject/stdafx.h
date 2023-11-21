@@ -6,6 +6,9 @@
 #define FRAME_BUFFER_WIDTH		1080
 #define FRAME_BUFFER_HEIGHT		700
 
+#define SERVERTICK 40
+#define SERVERINTERPOR 2
+
 #define WIN32_LEAN_AND_MEAN             // 거의 사용되지 않는 내용은 Windows 헤더에서 제외합니다.
 // Windows 헤더 파일:
 #include <windows.h>
