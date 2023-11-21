@@ -120,7 +120,7 @@ class CScene
 
 	void BulletToObject();
 
-	void InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<SESSION>(&UserPosStore)[MAX_USER]);
+	void InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<SESSION>(&UserPosStore)[MAX_USER], std::array<SESSION, MAX_USER>& Players);
 
 	//레디 -> 다른 플레이어 정보 넣어주기
 	void InitOtherPlayer(std::array<SESSION, MAX_USER> &Players, int id);

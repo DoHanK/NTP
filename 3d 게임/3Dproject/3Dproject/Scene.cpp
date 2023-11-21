@@ -784,28 +784,34 @@ void CScene::BulletToObject() {
 	}
 }
 
-void CScene::InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<SESSION> (&UserPosStore)[MAX_USER])
+void CScene::InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<SESSION> (&UserPosStore)[MAX_USER], std::array<SESSION, MAX_USER>& Players)
 {
 
 	for (int id = 0; id < MAX_USER; ++id) {
 
-		if (UserPosStore[id].size() == 0) {
-			//자기자신만
+		//유효아이디만
+		if (Players[id].id < 0) {
 			continue;
 		}
-		
-			if(EveryTick[id] > SERVERANIMATIONTICK && (UserPosStore[id].size()>1)) {
+		if (UserPosStore[id].size() == 0) {
+			//선형 보간 의미 없음
+			continue;
+		}
+
+
+		if (UserPosStore[id].size() > 1) {
+			
+			if (EveryTick[id] > SERVERANIMATIONTICK) {
 				//앞의 위치 다 지워버림
 				UserPosStore[id].pop_front();
 				EveryTick[id] = 0;
 				continue;
 			}
-		
-		if (UserPosStore[id].size() > 1) {
-			
 			
 			SESSION pre = UserPosStore[id][0];
 			SESSION now = UserPosStore[id][1];
+
+			////같은 방향 같은 위치일때
 			if (pre.status.topDir.x == now.status.topDir.x &&
 				pre.status.topDir.y == now.status.topDir.y &&
 				pre.status.topDir.z == now.status.topDir.z &&
@@ -824,15 +830,34 @@ void CScene::InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<
 			}
 
 
-
-			float ftick = EveryTick[id] / SERVERANIMATIONTICK;
-	
-			XMFLOAT3 interBottomDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.bottomDir, 1 - ftick), Vector3::ScalarProduct(now.status.bottomDir, ftick)));
-			XMFLOAT3 intertopDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.topDir, 1 - ftick), Vector3::ScalarProduct(now.status.topDir, ftick)));
+			float ftick = float(EveryTick[id]) / SERVERANIMATIONTICK;
+			
+			XMFLOAT3 interBottomDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.bottomDir, 1.0f - ftick, false), Vector3::ScalarProduct(now.status.bottomDir, ftick, false)));
+			XMFLOAT3 intertopDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.topDir, 1.0f - ftick, false), Vector3::ScalarProduct(now.status.topDir, ftick, false)));
 
 			XMFLOAT3 interpos = Vector3::Add(pre.status.pos, Vector3::ScalarProduct(Vector3::Subtract(now.status.pos, pre.status.pos), ftick, false));
 
+			if (EveryTick[id] % 10 == 0 && id == 0) {
 
+
+				//OutputDebugStringA(std::to_string(id).c_str());
+				//OutputDebugStringA("의 ftick은	");
+				//OutputDebugStringA(std::to_string(EveryTick[id]).c_str());
+				//string temp = "0번째 값 위치";
+				//temp += std::to_string(pre.status.pos.x) + " " + std::to_string(pre.status.pos.y) + " " + std::to_string(pre.status.pos.z);
+				//temp += "1번째 값 위치";
+				//temp += std::to_string(now.status.pos.x) + " " + std::to_string(now.status.pos.y) + " " + std::to_string(now.status.pos.z);
+
+
+				////string temp = "위쪽";
+				////temp += std::to_string(intertopDir.x) + " " + std::to_string(intertopDir.y) + " " + std::to_string(intertopDir.z);
+				////temp += "          아래";
+				////temp += std::to_string(interBottomDir.x) + " " + std::to_string(interBottomDir.y) + " " + std::to_string(interBottomDir.z);
+				//temp += "          위치";
+				//temp += std::to_string(interpos.x) + " " + std::to_string(interpos.y) + " " + std::to_string(interpos.z)+"\n";
+				//OutputDebugStringA(temp.c_str());
+
+			}
 
 
 			XMFLOAT4X4 TempMatrix;
@@ -872,6 +897,7 @@ void CScene::InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<
 			CTankObjects[now.id]->SetPosition(interpos);
 			CTankObjects[now.id]->UpdateBoundingBox();
 			EveryTick[id]++;
+
 		}
 		else {
 
@@ -913,7 +939,6 @@ void CScene::InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<
 			CTankObjects[id]->UpdateBoundingBox();
 			EveryTick[id] = 0;
 		}
-
 	}
 }
 

@@ -49,6 +49,9 @@ CGameFrameWork::CGameFrameWork() {
 	for (SESSION& user : m_OtherPlayer) {
 		user.id = -1;
 	}
+	for (int id = 0; id <MAX_USER; ++id) {
+		m_EachSinkTick[id] = 0;
+	}
 }
 CGameFrameWork::~CGameFrameWork() {
 	// 소켓 리소스 반환
@@ -523,7 +526,8 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				if (m_pPlayer) m_pCamera = ((CTanker*)m_pPlayer)->ChangeCamera((wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
 				break;
 			case VK_CONTROL:
-				((CTanker*)m_pPlayer)->FireMissile();
+				if(m_pPlayer->m_bActive)
+					((CTanker*)m_pPlayer)->FireMissile();
 			
 				break;
 			case 'X':
@@ -539,12 +543,14 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			case 'I':
 				if (m_bInterporation) {
 					m_bInterporation = false;
+					OutputDebugStringA("선형보간 x");
 					break;
 				}
 				for (int id = 0; id < MAX_USER; ++id) {
 					UserPosStore[id].clear();
 				}
 				m_bInterporation = true;
+				OutputDebugStringA("선형보간 ㅇ");
 				break;
 			default:
 				break;
@@ -930,7 +936,7 @@ void CGameFrameWork::FrameAdvance() {
 	{
 		if (m_bInterporation) {
 			//탱크 interporation	
-			m_pScene->InterporationTank(m_EachSinkTick, UserPosStore);
+			m_pScene->InterporationTank(m_EachSinkTick, UserPosStore, m_OtherPlayer);
 			
 		}
 			AnimateObjects();
@@ -1347,6 +1353,7 @@ void CGameFrameWork::InitPlayerGameStage()
 			}
 			//컬러색깔
 			{
+			
 				std::string filetemp = "Texture/playstage/";
 				if (m_OtherPlayer[id].color == red)
 					filetemp += "RedAlpha.dds";
@@ -1374,31 +1381,19 @@ void CGameFrameWork::InitPlayerGameStage()
 void CGameFrameWork::ChangeHPUI()
 {
 
-//(10 - hp를 10으로 나눈 몫)-> alpha의 개수 
 
-	
-	for (int i = 0; i < 10 - (m_OtherPlayer[0].status.hp / 10); i++) {
-		//21-30
-		m_pUIManager->RectList[30 - i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/alpha.dds");
-	}
-		
-		
-
-
-	for (int i = 0; i < 10 - (m_OtherPlayer[1].status.hp / 10); i++) {
-		//31-40
-		m_pUIManager->RectList[40 - i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/alpha.dds");
-	}
-		
-		
 
 	
 
-	for (int i = 0; i < 10 - (m_OtherPlayer[2].status.hp / 10); i++) {
-		//41-50
-		m_pUIManager->RectList[50 - i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/alpha.dds");
-	}
 	
+	for (int id = 0; id < MAX_USER; ++id) {
+
+		for (int i = 0; i < 10 - (m_OtherPlayer[id].status.hp / 10); i++) {
+			//41-50
+			m_pUIManager->RectList[30 + 10 * m_OtherPlayer[id].pos_num - i].second = m_pMeshManager->BringTexture(m_pd3dDevice, m_pd3dCommandList, "Texture/playstage/alpha.dds");
+		}
+
+	}
 	
 }
 
@@ -1633,6 +1628,7 @@ void CGameFrameWork::SendHitBullet()
 	p.type = CS_ATTACK;
 	for (int i = 0; i < BULLETS; ++i) {
 		if(m_pPlayer)
+		if (m_pPlayer->m_ppBullets[i])
 		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
 			
 			for (int id = 0; id < MAX_USER; ++id) {
@@ -1732,7 +1728,8 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 				m_pScene->AllBullets[id][i].SetRotationSpeed(360.0f);
 			}
 		}
-	}break;
+					  break;
+	}
 	case SC_ADD_PLAYER: {
 		SC_ADD_PLAYER_PACKET* p= reinterpret_cast<SC_ADD_PLAYER_PACKET*>(packet);
 		//정보 초기화
@@ -1746,8 +1743,8 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		else {
 			m_pPlayer->initGame(p);
 		}
-	}
 	break;
+	}
 	case SC_MOVE_PLAYER: {
 		SC_MOVE_PLAYER_PACKET* p = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
 		//내 외에 움직일때 
@@ -1763,9 +1760,10 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 
 			UserPosStore[p->id].push_back(m_OtherPlayer[p->id]);
 
-			m_EachSinkTick[p->id] = 0;
+			
 			if (!m_bInterporation) { //2frame에 한번식 받으면 굳이 안해줌
 				m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
+				m_EachSinkTick[p->id] = 0;
 			}
 		
 	
@@ -1773,10 +1771,26 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		break;
 	}
 	case SC_REMOVE_PLAYER:{
-		SC_REMOVE_PLAYER_PACKET*p= reinterpret_cast<SC_REMOVE_PLAYER_PACKET*>(packet);
+		SC_REMOVE_PLAYER_PACKET *p= reinterpret_cast<SC_REMOVE_PLAYER_PACKET*>(packet);
 		if (m_myid == p->id) {
 			m_pPlayer->m_bActive = false;
-			
+
+			for (auto& m : m_pScene->m_BillBoardList) {
+				if (!m->m_bActive) {
+					m->m_bActive = true;
+					m->SetPosition(m_pPlayer->GetPosition());
+					break;
+				}
+			}
+
+			for (auto& pBill : m_pScene->m_SubBillBoardList) {
+				if (!pBill->m_bActive) {
+					pBill->m_bActive = true;
+					pBill->SetPosition(m_pPlayer->GetPosition());
+					break;
+				}
+			}
+
 		}
 		else {
 			for (auto &m : m_pScene->m_BillBoardList) {
@@ -1794,13 +1808,11 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 				}
 			}
 			m_pScene->ReomvePlayer(p->id);
-			m_OtherPlayer[p->id].id = -1;
-			m_pUIManager->DeleteAllRect();
-			m_pScoreManager->DeleteAllRect();
-			MakeGameStage();
-			InitPlayerGameStage();
-			
 		}
+			m_OtherPlayer[p->id].status.hp = 0;
+			m_OtherPlayer[p->id].id = -1;
+			InitPlayerGameStage();
+			ChangeHPUI();
 		break;
 	}
 	case SC_BULLET: {
@@ -1825,7 +1837,27 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			OutputDebugStringA(temp.c_str());
 			ChangeHPUI();
 		}
-		
+		if (m_myid == p->id) {
+
+			for (auto& m : m_pScene->m_SubBillBoardList) {
+				if (!m->m_bActive) {
+					m->m_bActive = true;
+					m->SetPosition(m_pPlayer->GetPosition());
+					break;
+				}
+			}
+
+		}
+		else {
+			for (auto& m : m_pScene->m_SubBillBoardList) {
+				if (!m->m_bActive) {
+					m->m_bActive = true;
+					m->SetPosition(m_pScene->CTankObjects[p->id]->GetPosition());
+					break;
+				}
+			}
+		}
+
 		break;
 	}
 
