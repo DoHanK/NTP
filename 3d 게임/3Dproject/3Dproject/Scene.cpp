@@ -784,59 +784,137 @@ void CScene::BulletToObject() {
 	}
 }
 
-void CScene::InterporationTank(int& servertick,const SESSION& pre,const SESSION& now)
+void CScene::InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<SESSION> (&UserPosStore)[MAX_USER])
 {
-	if (servertick > SERVERTICK)
-		servertick = SERVERTICK;
+
+	for (int id = 0; id < MAX_USER; ++id) {
+
+		if (UserPosStore[id].size() == 0) {
+			//자기자신만
+			continue;
+		}
+		
+			if(EveryTick[id] > SERVERANIMATIONTICK && (UserPosStore[id].size()>1)) {
+				//앞의 위치 다 지워버림
+				UserPosStore[id].pop_front();
+				EveryTick[id] = 0;
+				continue;
+			}
+		
+		if (UserPosStore[id].size() > 1) {
+			
+			
+			SESSION pre = UserPosStore[id][0];
+			SESSION now = UserPosStore[id][1];
+			if (pre.status.topDir.x == now.status.topDir.x &&
+				pre.status.topDir.y == now.status.topDir.y &&
+				pre.status.topDir.z == now.status.topDir.z &&
+
+				pre.status.bottomDir.x == now.status.bottomDir.x &&
+				pre.status.bottomDir.y == now.status.bottomDir.y &&
+				pre.status.bottomDir.z == now.status.bottomDir.z &&
+
+				pre.status.pos.x == now.status.pos.x &&
+				pre.status.pos.y == now.status.pos.y &&
+				pre.status.pos.z == now.status.pos.z) {
+
+				UserPosStore[id].pop_front();
+				EveryTick[id] = 0;
+				continue;
+			}
+
+
+
+			float ftick = EveryTick[id] / SERVERANIMATIONTICK;
 	
-	float ftick = servertick / SERVERTICK;
-	XMFLOAT3 interBottomDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.bottomDir, 1 - ftick), Vector3::ScalarProduct(now.status.bottomDir, ftick)));
-	XMFLOAT3 intertopDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.topDir, 1 - ftick), Vector3::ScalarProduct(now.status.topDir, ftick)));
-	
-	XMFLOAT3 interpos = Vector3::Add(pre.status.pos, Vector3::ScalarProduct(Vector3::Subtract(now.status.pos, pre.status.pos), ftick));
+			XMFLOAT3 interBottomDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.bottomDir, 1 - ftick), Vector3::ScalarProduct(now.status.bottomDir, ftick)));
+			XMFLOAT3 intertopDir = Vector3::Normalize(Vector3::Add(Vector3::ScalarProduct(pre.status.topDir, 1 - ftick), Vector3::ScalarProduct(now.status.topDir, ftick)));
+
+			XMFLOAT3 interpos = Vector3::Add(pre.status.pos, Vector3::ScalarProduct(Vector3::Subtract(now.status.pos, pre.status.pos), ftick, false));
 
 
 
 
-	XMFLOAT4X4 TempMatrix;
-	TempMatrix._11 = intertopDir.x;
-	TempMatrix._12 = intertopDir.y;
-	TempMatrix._13 = intertopDir.z;
-	TempMatrix._14 = 0.0f;
-	TempMatrix._21 = 0;
-	TempMatrix._22 = 1.0f;
-	TempMatrix._23 = 0;
-	TempMatrix._24 = 0.0f;
-	XMFLOAT3 LookVector = Vector3::CrossProduct(intertopDir, XMFLOAT3(0, 1, 0));
-	TempMatrix._31 = LookVector.x;
-	TempMatrix._32 = LookVector.y;
-	TempMatrix._33 = LookVector.z;
-	TempMatrix._34 = 0.0f;
-	TempMatrix._41 = interpos.x;
-	TempMatrix._42 = interpos.y;
-	TempMatrix._43 = interpos.z;
-	TempMatrix._44 = 1.0f;
+			XMFLOAT4X4 TempMatrix;
+			TempMatrix._11 = intertopDir.x;
+			TempMatrix._12 = intertopDir.y;
+			TempMatrix._13 = intertopDir.z;
+			TempMatrix._14 = 0.0f;
+			TempMatrix._21 = 0;
+			TempMatrix._22 = 1.0f;
+			TempMatrix._23 = 0;
+			TempMatrix._24 = 0.0f;
+			XMFLOAT3 LookVector = Vector3::CrossProduct(intertopDir, XMFLOAT3(0, 1, 0));
+			TempMatrix._31 = LookVector.x;
+			TempMatrix._32 = LookVector.y;
+			TempMatrix._33 = LookVector.z;
+			TempMatrix._34 = 0.0f;
+			TempMatrix._41 = interpos.x;
+			TempMatrix._42 = interpos.y;
+			TempMatrix._43 = interpos.z;
+			TempMatrix._44 = 1.0f;
 
-	//top Info
-	CTankObjects[now.id]->TopTransform = TempMatrix;
+			//top Info
+			CTankObjects[now.id]->TopTransform = TempMatrix;
 
-	//top Info
-	TempMatrix._11 = interBottomDir.x;
-	TempMatrix._12 = interBottomDir.y;
-	TempMatrix._13 = interBottomDir.z;
-	LookVector = Vector3::CrossProduct(interBottomDir, XMFLOAT3(0, 1, 0));
-	TempMatrix._31 = LookVector.x;
-	TempMatrix._32 = LookVector.y;
-	TempMatrix._33 = LookVector.z;
-	CTankObjects[now.id]->BottomTransform = TempMatrix;
-
-
-
-	CTankObjects[now.id]->SetPosition(interpos);
-	CTankObjects[now.id]->UpdateBoundingBox();
+			//top Info
+			TempMatrix._11 = interBottomDir.x;
+			TempMatrix._12 = interBottomDir.y;
+			TempMatrix._13 = interBottomDir.z;
+			LookVector = Vector3::CrossProduct(interBottomDir, XMFLOAT3(0, 1, 0));
+			TempMatrix._31 = LookVector.x;
+			TempMatrix._32 = LookVector.y;
+			TempMatrix._33 = LookVector.z;
+			CTankObjects[now.id]->BottomTransform = TempMatrix;
 
 
 
+			CTankObjects[now.id]->SetPosition(interpos);
+			CTankObjects[now.id]->UpdateBoundingBox();
+			EveryTick[id]++;
+		}
+		else {
+
+			XMFLOAT4X4 TempMatrix;
+			TempMatrix._11 = UserPosStore[id][0].status.topDir.x;
+			TempMatrix._12 = UserPosStore[id][0].status.topDir.y;
+			TempMatrix._13 = UserPosStore[id][0].status.topDir.z;
+			TempMatrix._14 = 0.0f;
+			TempMatrix._21 = 0;
+			TempMatrix._22 = 1.0f;
+			TempMatrix._23 = 0;
+			TempMatrix._24 = 0.0f;
+			XMFLOAT3 LookVector = Vector3::CrossProduct(UserPosStore[id][0].status.topDir, XMFLOAT3(0, 1, 0));
+			TempMatrix._31 = LookVector.x;
+			TempMatrix._32 = LookVector.y;
+			TempMatrix._33 = LookVector.z;
+			TempMatrix._34 = 0.0f;
+			TempMatrix._41 = UserPosStore[id][0].status.pos.x;
+			TempMatrix._42 = UserPosStore[id][0].status.pos.y;
+			TempMatrix._43 = UserPosStore[id][0].status.pos.z;
+			TempMatrix._44 = 1.0f;
+
+			//top Info
+			CTankObjects[id]->TopTransform = TempMatrix;
+
+			//top Info
+			TempMatrix._11 =UserPosStore[id][0].status.bottomDir.x;
+			TempMatrix._12 =UserPosStore[id][0].status.bottomDir.y;
+			TempMatrix._13 =UserPosStore[id][0].status.bottomDir.z;
+			LookVector = Vector3::CrossProduct(UserPosStore[id][0].status.bottomDir, XMFLOAT3(0, 1, 0));
+			TempMatrix._31 = LookVector.x;
+			TempMatrix._32 = LookVector.y;
+			TempMatrix._33 = LookVector.z;
+			CTankObjects[id]->BottomTransform = TempMatrix;
+
+
+
+			CTankObjects[id]->SetPosition(UserPosStore[id][0].status.pos);
+			CTankObjects[id]->UpdateBoundingBox();
+			EveryTick[id] = 0;
+		}
+
+	}
 }
 
 

@@ -531,6 +531,17 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				break;
 			case 'R':
 				m_pPlayer->SetPosition(XMFLOAT3(0, 2, 0));
+				break;
+			case 'I':
+				if (m_bInterporation) {
+					m_bInterporation = false;
+					break;
+				}
+				for (int id = 0; id < MAX_USER; ++id) {
+					UserPosStore[id].clear();
+				}
+				m_bInterporation = true;
+				break;
 			default:
 				break;
 			}
@@ -913,19 +924,11 @@ void CGameFrameWork::FrameAdvance() {
 	
 	if (m_GameState == PlayStage)
 	{
-		//탱크 interporation	
-		if (m_pScene) {
-			auto pre =m_PreOtherPlayer.begin();
-			for (auto& m : m_OtherPlayer) {
-				if (m.id > -1) {
-					m_pScene->InterporationTank(m_EachSinkTick[m.id], *pre, m);
-
-					m_EachSinkTick[m.id]++;
-				}
-				pre++;
-			}
+		if (m_bInterporation) {
+			//탱크 interporation	
+			m_pScene->InterporationTank(m_EachSinkTick, UserPosStore);
+			
 		}
-
 			AnimateObjects();
 			SendHitBullet();
 			ProcessInput();
@@ -1683,6 +1686,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			m_OtherPlayer[p->id].status.bottomDir = p->bottom_dir;
 			m_OtherPlayer[p->id].status.pos = p->pos;
 			m_pScene->InitOtherPlayer(m_OtherPlayer, p->id);
+			UserPosStore[p->id].push_back(m_OtherPlayer[p->id]);
 		}
 		else {
 			m_pPlayer->initGame(p);
@@ -1695,19 +1699,20 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		if (m_myid != p->id) {
 
 			//전의 이동을 움직임을 넣어주기
-			m_PreOtherPlayer[p->id].status.topDir = m_OtherPlayer[p->id].status.topDir;
-			m_PreOtherPlayer[p->id].status.bottomDir = m_OtherPlayer[p->id].status.bottomDir;
-			m_PreOtherPlayer[p->id].status.pos = m_OtherPlayer[p->id].status.pos;
+			m_PreOtherPlayer[p->id] = m_OtherPlayer[p->id];
 
 
 			m_OtherPlayer[p->id].status.topDir		= p->top_dir;
 			m_OtherPlayer[p->id].status.bottomDir	= p->bottom_dir;
 			m_OtherPlayer[p->id].status.pos			= p->pos;
 
+			UserPosStore[p->id].push_back(m_OtherPlayer[p->id]);
+
 			m_EachSinkTick[p->id] = 0;
-			if (SERVERTICK < SERVERINTERPOR) { //2frame에 한번식 받으면 굳이 안해줌
+			if (!m_bInterporation) { //2frame에 한번식 받으면 굳이 안해줌
 				m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
 			}
+		
 	
 		}
 		break;
