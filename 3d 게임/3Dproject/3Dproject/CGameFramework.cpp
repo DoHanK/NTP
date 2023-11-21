@@ -896,7 +896,7 @@ void CGameFrameWork::FrameAdvance() {
 			int remain_data = recvLen + remainLen;
 			char* p = m_RemainBuffer;
 			while (remain_data > 0) {
-				int packet_size = reinterpret_cast<unsigned short*>(p)[0];
+				int packet_size = MAKEWORD(p[0], p[1]);
 				if (packet_size <= remain_data) {
 					process_packet(0, p);
 					p = p + packet_size;
@@ -1726,6 +1726,20 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		else {
 			m_pScene->RefleshBullet(p);
 		}
+		break;
+	}
+	case SC_HITTED: {
+		SC_HITTED_PACKET* p = reinterpret_cast<SC_HITTED_PACKET*>(packet);
+		{
+			m_OtherPlayer[p->id].status.change_hp(p->hp);
+
+			std::string temp = "아이디 -";
+			temp += std::to_string(p->id);
+			temp += "체력 :";
+			temp += std::to_string(p->hp);
+			OutputDebugStringA(temp.c_str());
+		}
+
 		break;
 	}
 
