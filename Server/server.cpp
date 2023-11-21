@@ -392,6 +392,7 @@ void process_packet(int c_id, char* packet)
 				continue;
 			pl.send_bullet_packet(c_id);
 		}
+		break;
 	}
 	case CS_ATTACK: {
 		CS_ATTACK_PACKET* p = reinterpret_cast<CS_ATTACK_PACKET*>(packet);
