@@ -409,6 +409,7 @@ void process_packet(int c_id, char* packet)
 				pl.send_hitted_packet(p->id);
 
 		}
+		break;
 	}
 	}
 }
