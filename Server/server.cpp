@@ -397,7 +397,7 @@ void process_packet(int c_id, char* packet)
 	case CS_ATTACK: {
 		CS_ATTACK_PACKET* p = reinterpret_cast<CS_ATTACK_PACKET*>(packet);
 		if (p->id != -1) {
-			clients[p->id].status.change_hp(-10);
+			clients[p->id].status.change_hp(clients[p->id].status.get_hp() - 10);
 		}
 
 		for (auto& pl : clients) {
