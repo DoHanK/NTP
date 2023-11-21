@@ -133,7 +133,7 @@ public:
 		char* p = remainBuffer;
 		while (remain_data > 0) {
 			
-			int packet_size = MAKEWORD(p[0], p[1]);
+			int packet_size = (reinterpret_cast<unsigned short*>(p))[0];
 			if (packet_size <= remain_data) {
 				process_packet(id, p);
 				p = p + packet_size;
@@ -149,7 +149,7 @@ public:
 
 	void do_send(void* packet)																																// 데이터 송신
 	{
-		sendLen = int(MAKEWORD(reinterpret_cast<char*>(packet)[0] ,reinterpret_cast<char*>(packet)[1]));
+		sendLen = int(reinterpret_cast<unsigned short*>(packet)[0]);
 		memcpy(sendBuffer, reinterpret_cast<char*>(packet),sendLen);
 		sendLen = send(socket, sendBuffer, sendLen, 0);
 		if (sendLen == SOCKET_ERROR) {
@@ -393,25 +393,23 @@ void process_packet(int c_id, char* packet)
 			pl.send_bullet_packet(c_id);
 		}
 	}
-	/*case CS_ATTACK: {
+	case CS_ATTACK: {
 		CS_ATTACK_PACKET* p = reinterpret_cast<CS_ATTACK_PACKET*>(packet);
 		if (p->id != -1) {
 			clients[p->id].status.change_hp(-10);
 		}
-		clients[c_id].status.change_bullet_status(p->bullet_index, false);
 
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
 				continue;
-			if (p->id != -1) {
-				if (clients[p->id].status.get_hp() <= 10)
-					pl.send_remove_player_packet(p->id);
-				else
-					pl.send_hitted_packet(p->id);
-			}
-			pl.send_remove_bullet_packet(c_id, p->bullet_index);
+
+			if (clients[p->id].status.get_hp() <= 10)
+				pl.send_remove_player_packet(p->id);
+			else
+				pl.send_hitted_packet(p->id);
+
 		}
-	}*/
+	}
 	}
 }
 
