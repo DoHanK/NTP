@@ -24,6 +24,7 @@ void process_packet(int c_id, char* packet);
 
 mutex m;
 array<int, 3> Room{ -1,-1,-1 };
+int Rank = 3;
 
 array<XMFLOAT3, 8> Poses{};
 array<int, 8> Pos_List{-1,-1,-1,-1,-1,-1,-1};
@@ -175,17 +176,17 @@ public:
 	}
 	void send_ready_packet(int c_id);
 	void send_enter_room_packet(int c_id);
+	void send_exit_room_packet(int c_id);
 	void send_add_player_packet(int c_id);
 	void send_move_packet(int c_id);
-	void send_attack_packet(int c_id);
-	void send_dead_packet(int c_id);
 	void send_hitted_packet(int c_id);
 	void send_game_start_packet();
 	void send_remove_player_packet(int c_id);
 	void send_bullet_packet(int c_id);
+	void send_result_packet(int c_id);
 };
 
-array<SESSION, MAX_USER> clients;																												// 클라이언트 배열 생성
+array<SESSION, MAX_USER> clients;		// 클라이언트 배열 생성
 
 void SESSION::send_ready_packet(int c_id)
 {
@@ -206,6 +207,14 @@ void SESSION::send_enter_room_packet(int c_id)
 	p.color = clients[c_id].color;
 	p.pos_num = clients[c_id].pos_num;
 	do_send(&p);
+}
+
+void SESSION::send_exit_room_packet(int c_id)
+{
+	SC_EXIT_ROOM_PACKET p;
+	p.size = sizeof(SC_EXIT_ROOM_PACKET);
+	p.type = SC_EXIT_ROOM;
+	p.id = c_id;
 }
 
 void SESSION::send_add_player_packet(int c_id)
@@ -263,6 +272,18 @@ void SESSION::send_bullet_packet(int c_id)
 	do_send(&p);
 }
 
+void SESSION::send_result_packet(int c_id)
+{
+	SC_RESULT_PACKET p;
+	p.size = sizeof(SC_RESULT_PACKET);
+	p.type = SC_RESULT;
+	p.id = c_id;
+	m.lock();
+	p.rank = Rank--;
+	m.unlock();
+	do_send(&p);
+}
+
 void SESSION::send_hitted_packet(int c_id)
 {
 	SC_HITTED_PACKET p;
@@ -273,6 +294,11 @@ void SESSION::send_hitted_packet(int c_id)
 	do_send(&p);
 }
 
+void reset_session(int c_id) 
+{
+	clients[c_id].id = c_id;
+}
+
 void process_packet(int c_id, char* packet)
 {
 	//cout << "process_packet called" << endl;
@@ -280,6 +306,7 @@ void process_packet(int c_id, char* packet)
 	case CS_LOGIN: {
 		std::cout << "Recv Login Packet From Client Num : " << c_id << endl;
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
+		reset_session(c_id);
 		clients[c_id].userName = p->name;
 		clients[c_id].send_login_info_packet();
 		std::cout << "User Name - " << clients[c_id].userName << endl;
@@ -366,6 +393,14 @@ void process_packet(int c_id, char* packet)
 		}
 		break;
 	}
+	case CS_EXIT_ROOM: {
+		CS_EXIT_ROOM_PACKET* p = reinterpret_cast<CS_EXIT_ROOM_PACKET*>(packet);
+		clients[p->id].ready = false;
+		Room[p->id] = -1;
+		for (auto& pl : clients) {
+			pl.send_exit_room_packet(c_id);
+		}
+	}
 	case CS_MOVE: {
 		CS_MOVE_PACKET* p = reinterpret_cast<CS_MOVE_PACKET*>(packet);
 
@@ -402,10 +437,15 @@ void process_packet(int c_id, char* packet)
 			clients[p->id].status.change_hp(clients[p->id].status.get_hp() - 10);
 		}
 
+		if (clients[p->id].status.get_hp() <= 0) {
+			clients[p->id].send_result_packet(c_id);
+		}
+
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
 				continue;
-
+			if (pl.id == c_id)
+				continue;
 			if (clients[p->id].status.get_hp() <= 0)
 				pl.send_remove_player_packet(p->id);
 			else
@@ -443,6 +483,8 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 		clients[client_id].ready = false;
 		clients[client_id].error = false;
 		clients[client_id].socket = (SOCKET)arg;
+		
+		clients[client_id].status.change_hp(100);
 		cout << "Client [" << client_id << "] Login" << endl;
 	}
 	else {

@@ -16,6 +16,7 @@ constexpr char CS_READY = 2;
 constexpr char CS_ENTER_ROOM = 3;
 constexpr char CS_BULLET = 4;
 constexpr char CS_ATTACK = 5;
+constexpr char CS_EXIT_ROOM = 6;
 
 constexpr char SC_LOGIN_INFO = 2;
 constexpr char SC_ADD_PLAYER = 3;
@@ -27,6 +28,8 @@ constexpr char SC_GAME_START = 8;
 constexpr char SC_BULLET = 9;
 constexpr char SC_REMOVE_BULLET = 10;
 constexpr char SC_HITTED = 11;
+constexpr char SC_RESULT = 12;
+constexpr char SC_EXIT_ROOM = 13;
 
 
 
@@ -77,6 +80,11 @@ struct CS_ATTACK_PACKET {
 	char			type;
 	int				id;
 	int				bullet_index;
+};
+struct CS_EXIT_ROOM_PACKET {
+	unsigned short	size;
+	char			type;
+	int				id;
 };
 
 struct SC_LOGIN_INFO_PACKET {																														// S -> C 로그인 정보 패킷
@@ -158,6 +166,19 @@ struct SC_ENTER_ROOM_PACKET {
 struct SC_GAME_START_PACKET {
 	unsigned short	size;
 	char			type;
+};
+
+struct SC_RESULT_PACKET {
+	unsigned short	size;
+	char			type;
+	short			id;
+	int				rank;
+};
+
+struct SC_EXIT_ROOM_PACKET {
+	unsigned short	size;
+	char			type;
+	short			id;
 };
 
 #pragma pack (pop)
