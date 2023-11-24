@@ -1753,7 +1753,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 	break;
 	}
 	case SC_MOVE_PLAYER: {
-		if (m_GameState == ReadyStage) {
+		if (m_GameState == PlayStage) {
 			SC_MOVE_PLAYER_PACKET* p = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
 			//내 외에 움직일때 
 			if (m_myid != p->id) {
@@ -1780,7 +1780,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		break;
 	}
 	case SC_REMOVE_PLAYER:{
-		if (m_GameState == ReadyStage) {
+		if (m_GameState == PlayStage) {
 			SC_REMOVE_PLAYER_PACKET* p = reinterpret_cast<SC_REMOVE_PLAYER_PACKET*>(packet);
 			if (m_myid == p->id) {
 				m_pPlayer->m_bActive = false;
@@ -1827,7 +1827,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		break;
 	}
 	case SC_BULLET: {
-		if (m_GameState == ReadyStage) {
+		if (m_GameState == PlayStage) {
 			SC_BULLET_PACKET* p = reinterpret_cast<SC_BULLET_PACKET*>(packet);
 			if (m_myid == p->id) {
 
@@ -1839,7 +1839,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		break;
 	}
 	case SC_HITTED: {
-		if (m_GameState == ReadyStage) {
+		if (m_GameState == PlayStage) {
 			SC_HITTED_PACKET* p = reinterpret_cast<SC_HITTED_PACKET*>(packet);
 			{
 				m_OtherPlayer[p->id].status.change_hp(p->hp);
