@@ -778,8 +778,7 @@ void CGameFrameWork::ProcessInput() {
 void CGameFrameWork::AnimateObjects() {
 
 	float timer = m_GameTimer.GetTimeElapsed();
-
-
+ 
 	//서버에게 위치 정보 전달
 	if (m_GameState == PlayStage) {
 		ServerFrameRate += timer;
@@ -1633,7 +1632,7 @@ void CGameFrameWork::SendHitBullet()
 	p.type = CS_ATTACK;
 	for (int i = 0; i < BULLETS; ++i) {
 		if(m_pPlayer)
-		if (m_pPlayer->m_ppBullets[i])
+		if (m_pPlayer->m_ppBullets)
 		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
 			
 			for (int id = 0; id < MAX_USER; ++id) {
