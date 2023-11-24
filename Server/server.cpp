@@ -24,13 +24,14 @@ void process_packet(int c_id, char* packet);
 
 mutex m;
 array<int, 3> Room{ -1,-1,-1 };
-int Ready_Player = 0;
 
 array<XMFLOAT3, 8> Poses{};
 array<int, 8> Pos_List{-1,-1,-1,-1,-1,-1,-1};
 int RandomNumber;
 
 XMFLOAT3 Default_Pos{0,0,0};
+
+bool ingame = false;
 
 class Status {
 private:
@@ -286,21 +287,14 @@ void process_packet(int c_id, char* packet)
 		break;
 	}
 	case CS_READY: {
+		if (ingame)
+			break;
 		CS_READY_PACKET* p = reinterpret_cast<CS_READY_PACKET*>(packet);
 		if (clients[c_id].ready)
-		{
 			clients[c_id].ready = false;
-			m.lock();
-			Ready_Player--;
-			m.unlock();
-		}
 		else
-		{
 			clients[c_id].ready = true;
-			m.lock();
-			Ready_Player++;
-			m.unlock();
-		}
+
 
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
@@ -308,7 +302,15 @@ void process_packet(int c_id, char* packet)
 			pl.send_ready_packet(c_id);
 		}
 
-		if (Ready_Player == 3) {
+		for (int i = 0; i < Room.size(); ++i) {
+			if (Room[i] == -1)
+				return;
+		}
+
+		if (clients[Room[0]].ready && clients[Room[1]].ready&& clients[Room[2]].ready) {
+			m.lock();
+			ingame = true;
+			m.unlock();
 			for (auto& pl : clients) {
 				if (pl.in_use == false)
 					continue;
