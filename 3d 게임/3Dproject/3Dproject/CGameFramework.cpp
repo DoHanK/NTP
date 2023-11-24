@@ -778,6 +778,20 @@ void CGameFrameWork::ProcessInput() {
 void CGameFrameWork::AnimateObjects() {
 
 	float timer = m_GameTimer.GetTimeElapsed();
+
+
+	//서버에게 위치 정보 전달
+	if (m_GameState == PlayStage) {
+		ServerFrameRate += timer;
+		if (ServerFrameRate > SERVERTICK) {
+			SendPlayerInfoInPlaying();
+			SendBulletInfoInPlaying();
+
+			ServerFrameRate = 0;
+		}
+
+	}
+
 	if (m_GameState == PlayStage) {
 		if (m_pScene) m_pScene->AnimateObjects(timer);
 	}
@@ -894,15 +908,6 @@ void CGameFrameWork::FrameAdvance() {
 	m_pd3dCommandList->ClearDepthStencilView(d3dDsvCPUDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, NULL);
 #endif
 
-	//서버에게 위치 정보 전달
-	if (m_GameState == PlayStage) {
-		ServerFrameRate += 1;
-		if (ServerFrameRate > SERVERTICK) {
-			SendPlayerInfoInPlaying();
-			SendBulletInfoInPlaying();
-			ServerFrameRate = 0;
-		}
-	}
 
 
 	//서버 받는 곳
@@ -934,12 +939,12 @@ void CGameFrameWork::FrameAdvance() {
 	
 	if (m_GameState == PlayStage)
 	{
+			AnimateObjects();
 		if (m_bInterporation) {
 			//탱크 interporation	
 			m_pScene->InterporationTank(m_EachSinkTick, UserPosStore, m_OtherPlayer);
 			
 		}
-			AnimateObjects();
 			SendHitBullet();
 			ProcessInput();
 

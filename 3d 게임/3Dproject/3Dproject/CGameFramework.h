@@ -187,7 +187,7 @@ public:
 	Color					m_color = blue;
 	std::string				m_NickName = "seojin";								//PlayName
 
-	int ServerFrameRate = 0;
+	float ServerFrameRate = 0;
 
 	bool	m_conneted = false;
 	//Recv정보 처리 함수

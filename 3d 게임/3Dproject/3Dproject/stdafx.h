@@ -6,7 +6,8 @@
 #define FRAME_BUFFER_WIDTH		1080
 #define FRAME_BUFFER_HEIGHT		700
 
-#define SERVERTICK 10
+//1초에 15번 전송
+#define SERVERTICK 1.f/15.f 
 #define SERVERANIMATIONTICK 3.f
 
 #define WIN32_LEAN_AND_MEAN             // 거의 사용되지 않는 내용은 Windows 헤더에서 제외합니다.
