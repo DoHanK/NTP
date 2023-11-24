@@ -125,6 +125,7 @@ public:
 			std::cout << "Bind ErrorCode : " << errCode << endl;
 			error = true;
 			Room[pos_num] = -1;
+			status.change_hp(0);
 			return;
 		}
 		memcpy(remainBuffer + remainLen, recvBuffer, recvLen);
@@ -274,9 +275,6 @@ void SESSION::send_hitted_packet(int c_id)
 void process_packet(int c_id, char* packet)
 {
 	//cout << "process_packet called" << endl;
-	if (clients[c_id].in_use == false) {
-		return;
-	}
 	switch (packet[2]) {
 	case CS_LOGIN: {
 		std::cout << "Recv Login Packet From Client Num : " << c_id << endl;
@@ -452,11 +450,6 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 	while (1) {
 		clients[client_id].do_recv();
 		if (clients[client_id].error) {
-			for (auto& pl : clients) {
-				if (pl.in_use == false)
-					continue;
-				pl.send_remove_player_packet(client_id);
-			}
 			break;
 		}
 	}
