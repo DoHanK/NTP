@@ -161,9 +161,11 @@ public:
 	void Makemulticustomebutton();
 	void MakeReadyStage();
 	void AddPlayerReadyStage(int id);
+	void DelPlayerReadyStage(int id);
 	void ChangePlayerReadyStage(int id);
 	void MakeGameStage();
 	void InitPlayerGameStage();
+	void MakeEndStage();
 	void do_send(void* packet)																																// 데이터 송신
 	{
 		sendLen = int(reinterpret_cast<char*>(packet)[0]);
@@ -204,4 +206,6 @@ public:
 	void SendBulletInfoInPlaying();
 
 	void SendHitBullet();
+
+	void SendEXitRoom();
 };

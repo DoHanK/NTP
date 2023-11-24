@@ -497,10 +497,6 @@ void CScene::AnimateObjects(float fTimeElapsed) {
 			pBill->Animate(fTimeElapsed);
 	}
 
-	for (CTank* tank : CTankObjects) {
-		if (tank->m_bActive)
-			tank->Animate(fTimeElapsed);
-	}
 
 	////상대편 총알
 	//for (int id = 0; id < MAX_USER; ++id) {

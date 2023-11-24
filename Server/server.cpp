@@ -215,6 +215,7 @@ void SESSION::send_exit_room_packet(int c_id)
 	p.size = sizeof(SC_EXIT_ROOM_PACKET);
 	p.type = SC_EXIT_ROOM;
 	p.id = c_id;
+	do_send(&p);
 }
 
 void SESSION::send_add_player_packet(int c_id)
@@ -321,7 +322,7 @@ void process_packet(int c_id, char* packet)
 			clients[c_id].ready = false;
 		else
 			clients[c_id].ready = true;
-
+		std::cout << "레디 패킷 전송" << std::endl;
 
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
@@ -398,8 +399,9 @@ void process_packet(int c_id, char* packet)
 		clients[p->id].ready = false;
 		Room[p->id] = -1;
 		for (auto& pl : clients) {
-			pl.send_exit_room_packet(c_id);
+			pl.send_exit_room_packet(p->id);
 		}
+		break;
 	}
 	case CS_MOVE: {
 		CS_MOVE_PACKET* p = reinterpret_cast<CS_MOVE_PACKET*>(packet);
@@ -438,19 +440,38 @@ void process_packet(int c_id, char* packet)
 		}
 
 		if (clients[p->id].status.get_hp() <= 0) {
-			clients[p->id].send_result_packet(c_id);
+			clients[p->id].send_result_packet(p->id);
 		}
 
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
-				continue;
-			if (pl.id == c_id)
 				continue;
 			if (clients[p->id].status.get_hp() <= 0)
 				pl.send_remove_player_packet(p->id);
 			else
 				pl.send_hitted_packet(p->id);
 
+		}
+		// 승자인지 아닌지 체크
+		int livenum = MAX_USER;
+		for (auto& pl : clients) {
+			if (pl.status.get_hp() <= 0)
+				livenum--;
+		}
+		if (livenum == 1) {
+			clients[c_id].send_result_packet(c_id);
+			for (auto& pl : clients) {
+				pl.status.change_hp(100);
+				pl.ready = false;
+			}
+			for (int i = 0; i < MAX_USER; ++i) {
+				Room[i] = -1;
+				
+			}
+			m.lock();
+			Rank = 3;
+			m.unlock();
+			ingame = false;
 		}
 		break;
 	}
