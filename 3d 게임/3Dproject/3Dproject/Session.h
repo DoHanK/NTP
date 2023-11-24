@@ -6,7 +6,7 @@
 using namespace std;
 
 
-#define SERVERIP "192.168.80.193"
+#define SERVERIP "192.168.123.161"
 #define READYDELAY 1
 
 void PrintVal(int c_id);
