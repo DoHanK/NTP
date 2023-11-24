@@ -1387,9 +1387,6 @@ void CGameFrameWork::ChangeHPUI()
 {
 
 
-
-	
-
 	
 	for (int id = 0; id < MAX_USER; ++id) {
 
@@ -1631,11 +1628,11 @@ void CGameFrameWork::SendHitBullet()
 	CS_ATTACK_PACKET p;
 	p.size = sizeof(CS_ATTACK_PACKET);
 	p.type = CS_ATTACK;
-	m_pPlayer = save_Player;
+
 	for (int i = 0; i < BULLETS; ++i) {
 
 		if(m_pPlayer!=NULL){
-
+			
 			if (m_pPlayer->m_ppBullets != NULL) {
 
 				if (m_pPlayer->m_ppBullets[i]->m_bActive) {
