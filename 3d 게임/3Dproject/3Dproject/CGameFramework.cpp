@@ -1696,40 +1696,43 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		break;
 	}
 	case SC_READY: {
-		SC_READY_PACKET* p = reinterpret_cast<SC_READY_PACKET*>(packet);
-		m_OtherPlayer[p->id].id = p->id;
-		m_OtherPlayer[p->id].ready = p->ready;
-	
-		ChangePlayerReadyStage(p->id);
-		PrintPlayerInfo("레디상태",p->id);
+		if (m_GameState == ReadyStage) {
+			SC_READY_PACKET* p = reinterpret_cast<SC_READY_PACKET*>(packet);
+			m_OtherPlayer[p->id].id = p->id;
+			m_OtherPlayer[p->id].ready = p->ready;
 
+			ChangePlayerReadyStage(p->id);
+			PrintPlayerInfo("레디상태", p->id);
+		}
 		break;
 	}
 	case SC_GAME_START: {
-		//SC_GAME_START_PACKET* p= reinterpret_cast<SC_GAME_START_PACKET*>(packet);
-		m_pUIManager->DeleteAllRect();
-		m_pScoreManager->DeleteAllRect();
-		MakeGameStage();
-		InitPlayerGameStage();
-		m_PreGameState = m_GameState = PlayStage;
-		for (int id = 0; id < MAX_USER; ++id) {
-			for (int i = 0; i < BULLETS; ++i) {
-				
-				
-				if (m_OtherPlayer[id].color == 0) {
-					m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementBlue.dds");
+
+		if (m_GameState == ReadyStage) {
+			m_pUIManager->DeleteAllRect();
+			m_pScoreManager->DeleteAllRect();
+			MakeGameStage();
+			InitPlayerGameStage();
+			m_PreGameState = m_GameState = PlayStage;
+			for (int id = 0; id < MAX_USER; ++id) {
+				for (int i = 0; i < BULLETS; ++i) {
+
+
+					if (m_OtherPlayer[id].color == 0) {
+						m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementBlue.dds");
+					}
+					else if (m_OtherPlayer[id].color == 1) {
+						m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementRed.dds");
+					}
+					else if (m_OtherPlayer[id].color == 2) {
+						m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementGreen.dds");
+					}
+					else if (m_OtherPlayer[id].color == 3) {
+						m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementYellow.dds");
+					}
+					m_pScene->AllBullets[id][i].SetRotationAxis(XMFLOAT3(0.0f, 0.0f, 1.0f));
+					m_pScene->AllBullets[id][i].SetRotationSpeed(360.0f);
 				}
-				else if (m_OtherPlayer[id].color == 1) {
-					m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementRed.dds");
-				}
-				else if (m_OtherPlayer[id].color == 2) {
-					m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementGreen.dds");
-				}
-				else if (m_OtherPlayer[id].color == 3) {
-					m_pScene->AllBullets[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementYellow.dds");
-				}
-				m_pScene->AllBullets[id][i].SetRotationAxis(XMFLOAT3(0.0f, 0.0f, 1.0f));
-				m_pScene->AllBullets[id][i].SetRotationSpeed(360.0f);
 			}
 		}
 					  break;
@@ -1750,118 +1753,125 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 	break;
 	}
 	case SC_MOVE_PLAYER: {
-		SC_MOVE_PLAYER_PACKET* p = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
-		//내 외에 움직일때 
-		if (m_myid != p->id) {
+		if (m_GameState == ReadyStage) {
+			SC_MOVE_PLAYER_PACKET* p = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
+			//내 외에 움직일때 
+			if (m_myid != p->id) {
 
-			//전의 이동을 움직임을 넣어주기
-			m_PreOtherPlayer[p->id] = m_OtherPlayer[p->id];
+				//전의 이동을 움직임을 넣어주기
+				m_PreOtherPlayer[p->id] = m_OtherPlayer[p->id];
 
 
-			m_OtherPlayer[p->id].status.topDir		= p->top_dir;
-			m_OtherPlayer[p->id].status.bottomDir	= p->bottom_dir;
-			m_OtherPlayer[p->id].status.pos			= p->pos;
+				m_OtherPlayer[p->id].status.topDir = p->top_dir;
+				m_OtherPlayer[p->id].status.bottomDir = p->bottom_dir;
+				m_OtherPlayer[p->id].status.pos = p->pos;
 
-			UserPosStore[p->id].push_back(m_OtherPlayer[p->id]);
+				UserPosStore[p->id].push_back(m_OtherPlayer[p->id]);
 
-			
-			if (!m_bInterporation) { //2frame에 한번식 받으면 굳이 안해줌
-				m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
-				m_EachSinkTick[p->id] = 0;
+
+				if (!m_bInterporation) { //2frame에 한번식 받으면 굳이 안해줌
+					m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
+					m_EachSinkTick[p->id] = 0;
+				}
+
+
 			}
-		
-	
 		}
 		break;
 	}
 	case SC_REMOVE_PLAYER:{
-		SC_REMOVE_PLAYER_PACKET *p= reinterpret_cast<SC_REMOVE_PLAYER_PACKET*>(packet);
-		if (m_myid == p->id) {
-			m_pPlayer->m_bActive = false;
+		if (m_GameState == ReadyStage) {
+			SC_REMOVE_PLAYER_PACKET* p = reinterpret_cast<SC_REMOVE_PLAYER_PACKET*>(packet);
+			if (m_myid == p->id) {
+				m_pPlayer->m_bActive = false;
 
-			for (auto& m : m_pScene->m_BillBoardList) {
-				if (!m->m_bActive) {
-					m->m_bActive = true;
-					m->SetPosition(m_pPlayer->GetPosition());
-					break;
+				for (auto& m : m_pScene->m_BillBoardList) {
+					if (!m->m_bActive) {
+						m->m_bActive = true;
+						m->SetPosition(m_pPlayer->GetPosition());
+						break;
+					}
 				}
-			}
 
-			for (auto& pBill : m_pScene->m_SubBillBoardList) {
-				if (!pBill->m_bActive) {
-					pBill->m_bActive = true;
-					pBill->SetPosition(m_pPlayer->GetPosition());
-					break;
+				for (auto& pBill : m_pScene->m_SubBillBoardList) {
+					if (!pBill->m_bActive) {
+						pBill->m_bActive = true;
+						pBill->SetPosition(m_pPlayer->GetPosition());
+						break;
+					}
 				}
-			}
 
-		}
-		else {
-			for (auto &m : m_pScene->m_BillBoardList) {
-				if (!m->m_bActive) {
-					m->m_bActive = true;
-					m->SetPosition(m_pScene->CTankObjects[p->id]->GetPosition());
-					break;
-				}
 			}
-			for (auto &pBill : m_pScene->m_SubBillBoardList) {
-				if (!pBill->m_bActive) {
-					pBill->m_bActive = true;
-					pBill->SetPosition(m_pScene->CTankObjects[p->id]->GetPosition());
-					break;
+			else {
+				for (auto& m : m_pScene->m_BillBoardList) {
+					if (!m->m_bActive) {
+						m->m_bActive = true;
+						m->SetPosition(m_pScene->CTankObjects[p->id]->GetPosition());
+						break;
+					}
 				}
+				for (auto& pBill : m_pScene->m_SubBillBoardList) {
+					if (!pBill->m_bActive) {
+						pBill->m_bActive = true;
+						pBill->SetPosition(m_pScene->CTankObjects[p->id]->GetPosition());
+						break;
+					}
+				}
+				m_pScene->ReomvePlayer(p->id);
 			}
-			m_pScene->ReomvePlayer(p->id);
-		}
 			m_OtherPlayer[p->id].status.hp = 0;
 			m_OtherPlayer[p->id].id = -1;
 			InitPlayerGameStage();
 			ChangeHPUI();
+		}
 		break;
 	}
 	case SC_BULLET: {
-		SC_BULLET_PACKET* p = reinterpret_cast<SC_BULLET_PACKET*>(packet);
-		if (m_myid == p->id) {
-		
-		}
-		else {
-			m_pScene->RefleshBullet(p);
+		if (m_GameState == ReadyStage) {
+			SC_BULLET_PACKET* p = reinterpret_cast<SC_BULLET_PACKET*>(packet);
+			if (m_myid == p->id) {
+
+			}
+			else {
+				m_pScene->RefleshBullet(p);
+			}
 		}
 		break;
 	}
 	case SC_HITTED: {
-		SC_HITTED_PACKET* p = reinterpret_cast<SC_HITTED_PACKET*>(packet);
-		{
-			m_OtherPlayer[p->id].status.change_hp(p->hp);
+		if (m_GameState == ReadyStage) {
+			SC_HITTED_PACKET* p = reinterpret_cast<SC_HITTED_PACKET*>(packet);
+			{
+				m_OtherPlayer[p->id].status.change_hp(p->hp);
 
-			std::string temp = "아이디 -";
-			temp += std::to_string(p->id);
-			temp += "체력 :";
-			temp += std::to_string(p->hp);
-			OutputDebugStringA(temp.c_str());
-			ChangeHPUI();
-		}
-		if (m_myid == p->id) {
+				std::string temp = "아이디 -";
+				temp += std::to_string(p->id);
+				temp += "체력 :";
+				temp += std::to_string(p->hp);
+				OutputDebugStringA(temp.c_str());
+				ChangeHPUI();
+			}
+			if (m_myid == p->id) {
 
-			for (auto& m : m_pScene->m_SubBillBoardList) {
-				if (!m->m_bActive) {
-					m->m_bActive = true;
-					m->SetPosition(m_pPlayer->GetPosition());
-					break;
+				for (auto& m : m_pScene->m_SubBillBoardList) {
+					if (!m->m_bActive) {
+						m->m_bActive = true;
+						m->SetPosition(m_pPlayer->GetPosition());
+						break;
+					}
+				}
+
+			}
+			else {
+				for (auto& m : m_pScene->m_SubBillBoardList) {
+					if (!m->m_bActive) {
+						m->m_bActive = true;
+						m->SetPosition(m_pScene->CTankObjects[p->id]->GetPosition());
+						break;
+					}
 				}
 			}
-
 		}
-		else {
-			for (auto& m : m_pScene->m_SubBillBoardList) {
-				if (!m->m_bActive) {
-					m->m_bActive = true;
-					m->SetPosition(m_pScene->CTankObjects[p->id]->GetPosition());
-					break;
-				}
-			}
-		}
-
 		break;
 	}
 
