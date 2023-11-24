@@ -779,18 +779,10 @@ void CGameFrameWork::ProcessInput() {
 void CGameFrameWork::AnimateObjects() {
 
 	float timer = m_GameTimer.GetTimeElapsed();
- 
 	//서버에게 위치 정보 전달
-	if (m_GameState == PlayStage) {
 		ServerFrameRate += timer;
-		if (ServerFrameRate > SERVERTICK) {
-			SendPlayerInfoInPlaying();
-			SendBulletInfoInPlaying();
 
-			ServerFrameRate = 0;
-		}
 
-	}
 
 	if (m_GameState == PlayStage) {
 		if (m_pScene) m_pScene->AnimateObjects(timer);
@@ -909,6 +901,16 @@ void CGameFrameWork::FrameAdvance() {
 #endif
 
 
+	if (m_GameState == PlayStage) {
+		if (ServerFrameRate > SERVERTICK) {
+			SendPlayerInfoInPlaying();
+
+			SendBulletInfoInPlaying();
+
+			ServerFrameRate = 0;
+		}
+
+	}
 
 	//서버 받는 곳
 	if (m_conneted) {
@@ -939,6 +941,7 @@ void CGameFrameWork::FrameAdvance() {
 	
 	if (m_GameState == PlayStage)
 	{
+
 			AnimateObjects();
 		if (m_bInterporation) {
 			//탱크 interporation	
