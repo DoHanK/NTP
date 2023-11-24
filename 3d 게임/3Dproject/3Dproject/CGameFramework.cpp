@@ -405,6 +405,7 @@ void CGameFrameWork::BuildObjects() {
 
 	CTanker* pCreater = new CTanker(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), pMeshManager->BringMesh("Models/Missile.bin"),pMeshManager->BringTexture("Texture/ElementBlue.dds"), pMeshManager->BringMesh("Models/Mine.bin"));
 	m_pPlayer = pCreater;
+	save_Player = m_pPlayer;
 	m_pPlayer->m_pMesh = pMeshManager->BringMesh("Models/TankFree.bin");
 	m_pPlayer->InitAnimaition();
 	pCreater->FindFrameSet();
@@ -1630,6 +1631,7 @@ void CGameFrameWork::SendHitBullet()
 	CS_ATTACK_PACKET p;
 	p.size = sizeof(CS_ATTACK_PACKET);
 	p.type = CS_ATTACK;
+	m_pPlayer = save_Player;
 	for (int i = 0; i < BULLETS; ++i) {
 
 		if(m_pPlayer!=NULL){

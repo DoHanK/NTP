@@ -178,6 +178,7 @@ public:
 	//12장 
 	//플레이어 객체에 대한 포인터이다.
 	CTanker* m_pPlayer = NULL;
+	CTanker* save_Player = NULL;
 	//마지막으로 마우스 버튼을 클릭할 때의 마우스 커서의 위치다.
 	POINT m_ptOldCursorPos;
 
