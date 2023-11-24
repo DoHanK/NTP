@@ -1631,8 +1631,8 @@ void CGameFrameWork::SendHitBullet()
 	p.size = sizeof(CS_ATTACK_PACKET);
 	p.type = CS_ATTACK;
 	for (int i = 0; i < BULLETS; ++i) {
-		if(m_pPlayer)
-		if (m_pPlayer->m_ppBullets)
+		if(m_pPlayer!=NULL)
+		if (m_pPlayer->m_ppBullets != NULL)
 		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
 			
 			for (int id = 0; id < MAX_USER; ++id) {
