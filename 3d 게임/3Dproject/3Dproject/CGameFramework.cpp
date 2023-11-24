@@ -1631,27 +1631,30 @@ void CGameFrameWork::SendHitBullet()
 	p.size = sizeof(CS_ATTACK_PACKET);
 	p.type = CS_ATTACK;
 	for (int i = 0; i < BULLETS; ++i) {
-		if(m_pPlayer!=NULL)
-		if (m_pPlayer->m_ppBullets != NULL)
-		if (m_pPlayer->m_ppBullets[i]->m_bActive) {
-			
-			for (int id = 0; id < MAX_USER; ++id) {
 
-				if (m_pScene->CTankObjects[id]->m_bActive) {
-					if (m_pScene->CTankObjects[id]->m_BoundingBox.Intersects(m_pPlayer->m_ppBullets[i]->m_BoundingBox)|| m_pScene->CTankObjects[id]->TopBoundingBox.Intersects(m_pPlayer->m_ppBullets[i]->m_BoundingBox)) {
-						
-						m_pPlayer->m_ppBullets[i]->m_bActive = false;
-						m_pPlayer->m_ppBullets[i]->Reset();
-						p.id = id;
-						p.bullet_index = i;
-						memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
-						send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+		if(m_pPlayer!=NULL){
+
+			if (m_pPlayer->m_ppBullets != NULL) {
+
+				if (m_pPlayer->m_ppBullets[i]->m_bActive) {
+
+					for (int id = 0; id < MAX_USER; ++id) {
+
+						if (m_pScene->CTankObjects[id]->m_bActive) {
+							if (m_pScene->CTankObjects[id]->m_BoundingBox.Intersects(m_pPlayer->m_ppBullets[i]->m_BoundingBox) || m_pScene->CTankObjects[id]->TopBoundingBox.Intersects(m_pPlayer->m_ppBullets[i]->m_BoundingBox)) {
+
+								m_pPlayer->m_ppBullets[i]->m_bActive = false;
+								m_pPlayer->m_ppBullets[i]->Reset();
+								p.id = id;
+								p.bullet_index = i;
+								memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
+								send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+							}
+						}
 					}
+
 				}
 			}
-	
-
-		
 
 		}
 		
