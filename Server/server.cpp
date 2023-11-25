@@ -333,7 +333,7 @@ void process_packet(int c_id, char* packet)
 				return;
 		}
 
-		if (clients[Room[0]].ready && clients[Room[1]].ready&& clients[Room[2]].ready) {
+		if (clients[Room[0]].ready && clients[Room[1]].ready && clients[Room[2]].ready) {
 			m.lock();
 			ingame = true;
 			m.unlock();
@@ -419,9 +419,9 @@ void process_packet(int c_id, char* packet)
 	}
 	case CS_BULLET: {
 		CS_BULLET_PACKET* p = reinterpret_cast<CS_BULLET_PACKET*>(packet);
-		memcpy(&clients[c_id].status.bullets_pos, &p->bullets_pos,sizeof(p->bullets_pos));
-		memcpy(&clients[c_id].status.bullets_dir, &p->bullets_dir,sizeof(p->bullets_dir));
-		memcpy(&clients[c_id].status.in_use_bullets, &p->in_use_bullets,sizeof(p->in_use_bullets));
+		memcpy(&clients[c_id].status.bullets_pos, &p->bullets_pos, sizeof(p->bullets_pos));
+		memcpy(&clients[c_id].status.bullets_dir, &p->bullets_dir, sizeof(p->bullets_dir));
+		memcpy(&clients[c_id].status.in_use_bullets, &p->in_use_bullets, sizeof(p->in_use_bullets));
 		for (auto& pl : clients) {
 			if (pl.in_use == false)
 				continue;
@@ -444,7 +444,7 @@ void process_packet(int c_id, char* packet)
 		}
 
 		if (Rank == 1) {
-			clients[c_id].send_result_packet(c_id,1);
+			clients[c_id].send_result_packet(c_id, 1);
 			for (auto& pl : clients) {
 				pl.status.change_hp(100);
 				pl.ready = false;
@@ -465,7 +465,7 @@ void process_packet(int c_id, char* packet)
 				pl.send_hitted_packet(p->id);
 
 		}
-		}
+
 		break;
 	}
 	}
