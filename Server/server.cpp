@@ -454,6 +454,9 @@ void process_packet(int c_id, char* packet)
 			for (int i = 0; i < MAX_USER; ++i) {
 				Room[i] = -1;
 			}
+			for (int i = 0; i < Pos_List.size(); ++i) {
+				Pos_List[i] = -1;
+			}
 		}
 
 		for (auto& pl : clients) {
