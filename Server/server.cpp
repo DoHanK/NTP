@@ -401,7 +401,7 @@ void process_packet(int c_id, char* packet)
 		CS_EXIT_ROOM_PACKET* p = reinterpret_cast<CS_EXIT_ROOM_PACKET*>(packet);
 		clients[p->id].ready = false;
 		m.lock();
-		Room[p->id] = -1;
+		Room[clients[p->id].pos_num] = -1;
 		m.unlock();
 		for (auto& pl : clients) {
 			pl.send_exit_room_packet(p->id);
