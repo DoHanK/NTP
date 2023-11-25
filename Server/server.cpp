@@ -346,6 +346,7 @@ void process_packet(int c_id, char* packet)
 			for (auto& pl : clients) {										// 각 클라이언트 생성 위치 지정
 				if (pl.in_use == false)
 					continue;
+				m.lock();
 				for (;;) {
 					RandomNumber = std::rand() % 8;
 					if (Pos_List[RandomNumber] == -1) {
@@ -353,6 +354,7 @@ void process_packet(int c_id, char* packet)
 						break;
 					}
 				}
+				m.unlock();
 				pl.status.change_pos(Poses[RandomNumber]);
 			}
 
@@ -371,11 +373,14 @@ void process_packet(int c_id, char* packet)
 
 		CS_ENTER_ROOM_PACKET* p = reinterpret_cast<CS_ENTER_ROOM_PACKET*>(packet);
 		for (int i = 0; i < Room.size(); ++i) {
+			m.lock();
 			if (Room[i] == -1) {
 				Room[i] = c_id;
 				clients[c_id].pos_num = i;
+				m.unlock();
 				break;
 			}
+			m.unlock();
 		}
 		clients[c_id].color = p->color;
 
@@ -395,7 +400,9 @@ void process_packet(int c_id, char* packet)
 	case CS_EXIT_ROOM: {
 		CS_EXIT_ROOM_PACKET* p = reinterpret_cast<CS_EXIT_ROOM_PACKET*>(packet);
 		clients[p->id].ready = false;
+		m.lock();
 		Room[p->id] = -1;
+		m.unlock();
 		for (auto& pl : clients) {
 			pl.send_exit_room_packet(p->id);
 		}
@@ -451,12 +458,14 @@ void process_packet(int c_id, char* packet)
 				Rank = 3;
 				ingame = false;
 			}
+			m.lock();
 			for (int i = 0; i < MAX_USER; ++i) {
 				Room[i] = -1;
 			}
 			for (int i = 0; i < Pos_List.size(); ++i) {
 				Pos_List[i] = -1;
 			}
+			m.unlock();
 		}
 
 		for (auto& pl : clients) {
