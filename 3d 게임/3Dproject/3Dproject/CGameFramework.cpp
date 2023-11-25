@@ -947,17 +947,19 @@ void CGameFrameWork::FrameAdvance() {
 		}
 
 	}
-	if (m_pPlayer->m_ppBullets[0]) {
-		OutputDebugStringA("통과 1");
-	}
+
+
 	//서버 받는 곳
 	if (m_conneted) {
+
 		int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
 		if (::WSAGetLastError() == WSAEWOULDBLOCK) {
 
 		}
 		else {
+
 			memcpy(m_RemainBuffer + remainLen, m_RecvBuffer, recvLen);
+
 			int remain_data = recvLen + remainLen;
 			char* p = m_RemainBuffer;
 			while (remain_data > 0) {
