@@ -183,7 +183,7 @@ public:
 	void send_game_start_packet();
 	void send_remove_player_packet(int c_id);
 	void send_bullet_packet(int c_id);
-	void send_result_packet(int c_id);
+	void send_result_packet(int c_id, int rank);
 };
 
 array<SESSION, MAX_USER> clients;		// 클라이언트 배열 생성
@@ -273,15 +273,13 @@ void SESSION::send_bullet_packet(int c_id)
 	do_send(&p);
 }
 
-void SESSION::send_result_packet(int c_id)
+void SESSION::send_result_packet(int c_id, int rank)
 {
 	SC_RESULT_PACKET p;
 	p.size = sizeof(SC_RESULT_PACKET);
 	p.type = SC_RESULT;
 	p.id = c_id;
-	m.lock();
-	p.rank = Rank--;
-	m.unlock();
+	p.rank = rank;
 	do_send(&p);
 }
 
@@ -438,9 +436,24 @@ void process_packet(int c_id, char* packet)
 		if (p->id != -1) {
 			clients[p->id].status.change_hp(clients[p->id].status.get_hp() - 10);
 		}
-
 		if (clients[p->id].status.get_hp() <= 0) {
-			clients[p->id].send_result_packet(p->id);
+			clients[p->id].send_result_packet(p->id, Rank);
+			m.lock();
+			Rank--;
+			m.unlock();
+		}
+
+		if (Rank == 1) {
+			clients[c_id].send_result_packet(c_id,1);
+			for (auto& pl : clients) {
+				pl.status.change_hp(100);
+				pl.ready = false;
+				Rank = 3;
+				ingame = false;
+			}
+			for (int i = 0; i < MAX_USER; ++i) {
+				Room[i] = -1;
+			}
 		}
 
 		for (auto& pl : clients) {
@@ -452,26 +465,6 @@ void process_packet(int c_id, char* packet)
 				pl.send_hitted_packet(p->id);
 
 		}
-		// 승자인지 아닌지 체크
-		int livenum = MAX_USER;
-		for (auto& pl : clients) {
-			if (pl.status.get_hp() <= 0)
-				livenum--;
-		}
-		if (livenum == 1) {
-			clients[c_id].send_result_packet(c_id);
-			for (auto& pl : clients) {
-				pl.status.change_hp(100);
-				pl.ready = false;
-			}
-			for (int i = 0; i < MAX_USER; ++i) {
-				Room[i] = -1;
-				
-			}
-			m.lock();
-			Rank = 3;
-			m.unlock();
-			ingame = false;
 		}
 		break;
 	}
