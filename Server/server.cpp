@@ -98,7 +98,8 @@ public:
 	bool			error;
 	int				pos_num;
 	int				remainLen;
-	char			remainBuffer[BUF_SIZE*2];
+	char			remainBuffer[BUF_SIZE * 2];
+	char			remainBuffer2[BUF_SIZE * 2];
 public:
 	SESSION() : socket(0), in_use(false)
 	{
@@ -134,7 +135,6 @@ public:
 		int remain_data = recvLen + remainLen;
 		char* p = remainBuffer;
 		while (remain_data > 0) {
-			
 			int packet_size = MAKEWORD(p[0], p[1]);;
 			if (packet_size <= remain_data) {
 				process_packet(id, p);
@@ -444,8 +444,8 @@ void process_packet(int c_id, char* packet)
 			clients[p->id].status.change_hp(clients[p->id].status.get_hp() - 10);
 		}
 		if (clients[p->id].status.get_hp() <= 0) {
-			clients[p->id].send_result_packet(p->id, Rank);
 			m.lock();
+			clients[p->id].send_result_packet(p->id, Rank);
 			Rank--;
 			m.unlock();
 		}
