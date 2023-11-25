@@ -75,7 +75,7 @@ private:
 	UINT64 m_nFenceValues[m_nSwapChainBuffers];
 	//씬을 그리기 위한 멤버변수
 	CScene* m_pScene;
-
+	CTanker* m_pPlayer = NULL;
 	CCamera* m_pCamera = NULL;
 
 	CUiManager* m_pUIManager = NULL;
@@ -97,7 +97,7 @@ private:
 	int		sendLen;																													
 	char	m_RecvBuffer[BUF_SIZE];																												// RecvBuffer
 	int		recvLen;
-	char	m_RemainBuffer[BUF_SIZE * 2];
+	char	m_RemainBuffer[BUF_SIZE * 100];
 	int		remainLen;
 	char	KeyInputBuffer[NameBufferSize];
 public:
@@ -179,8 +179,7 @@ public:
 public:
 	//12장 
 	//플레이어 객체에 대한 포인터이다.
-	CTanker* m_pPlayer = NULL;
-	CTanker* save_Player = NULL;
+
 	//마지막으로 마우스 버튼을 클릭할 때의 마우스 커서의 위치다.
 	POINT m_ptOldCursorPos;
 

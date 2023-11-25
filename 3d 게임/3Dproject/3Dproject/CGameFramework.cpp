@@ -405,7 +405,6 @@ void CGameFrameWork::BuildObjects() {
 
 	CTanker* pCreater = new CTanker(m_pd3dDevice, m_pd3dCommandList, m_pScene->GetGraphicsRootSignature(), pMeshManager->BringMesh("Models/Missile.bin"),pMeshManager->BringTexture("Texture/ElementBlue.dds"), pMeshManager->BringMesh("Models/Mine.bin"));
 	m_pPlayer = pCreater;
-	save_Player = m_pPlayer;
 	m_pPlayer->m_pMesh = pMeshManager->BringMesh("Models/TankFree.bin");
 	m_pPlayer->InitAnimaition();
 	pCreater->FindFrameSet();
@@ -414,7 +413,7 @@ void CGameFrameWork::BuildObjects() {
 	pCreater->m_pShader = m_pScene->m_pCllluminatedShader;
 	m_pScene->m_pPlayer = pCreater;
 
-	m_pCamera = ((CTanker*)m_pPlayer)->ChangeCamera(THIRD_PERSON_CAMERA, m_GameTimer.GetTimeElapsed());
+	m_pCamera = m_pPlayer->ChangeCamera(THIRD_PERSON_CAMERA, m_GameTimer.GetTimeElapsed());
 
 
 
@@ -473,7 +472,7 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 	
 	if (wParam ==VK_UP || wParam== VK_DOWN || wParam== VK_LEFT || wParam==VK_RIGHT)
 		if (nMessageID == WM_KEYUP)
-			((CTanker*)m_pPlayer)->wheelanimation = FALSE;
+			(m_pPlayer)->wheelanimation = FALSE;
 
 	if (nMessageID == WM_KEYUP)
 	if (/*m_GameState == LoginStage|| */m_GameState==InitStage) {
@@ -524,15 +523,15 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 			case VK_F1:
 			case VK_F2:
 			case VK_F3:
-				if (m_pPlayer) m_pCamera = ((CTanker*)m_pPlayer)->ChangeCamera((wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
+				if (m_pPlayer) m_pCamera = m_pPlayer->ChangeCamera((wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
 				break;
 			case VK_CONTROL:
 				if(m_pPlayer->m_bActive)
-					((CTanker*)m_pPlayer)->FireMissile();
+					m_pPlayer->FireMissile();
 			
 				break;
 			case 'X':
-				((CTanker*)m_pPlayer)->SetMine();
+				m_pPlayer->SetMine();
 				break;
 			case 'B':
 				if (m_bRenderBoundingBox) m_bRenderBoundingBox = false;
@@ -756,8 +755,8 @@ void CGameFrameWork::ProcessInput() {
 		if (pKeyBuffer[VK_RIGHT] & 0xF0)		m_pPlayer->Rotate(0, 1.0, 0.0f);
 
 		if (pKeyBuffer[VK_UP] & 0xF0 || pKeyBuffer[VK_DOWN] & 0xF0 || pKeyBuffer[VK_LEFT] & 0xF0 || pKeyBuffer[VK_RIGHT] & 0xF0) {
-			((CTanker*)m_pPlayer)->wheelanimation = TRUE;
-			((CTanker*)(m_pPlayer))->flag_move_screen = TRUE;
+			m_pPlayer->wheelanimation = TRUE;
+			m_pPlayer->flag_move_screen = TRUE;
 		}
 
 		//if (pKeyBuffer[VK_LEFT] & 0xF0)			dwDirection |= DIR_LEFT;
@@ -772,7 +771,7 @@ void CGameFrameWork::ProcessInput() {
 	if (::GetCapture() == m_hWnd) {
 
 		::SetCursor(NULL);
-		((CTanker*)(m_pPlayer))->flag_move_screen = TRUE;
+		m_pPlayer->flag_move_screen = TRUE;
 		::GetCursorPos(&ptCursorPos);
 
 		cxDelta = (float)(ptCursorPos.x - m_ptOldCursorPos.x) / 3.0f;
@@ -948,7 +947,9 @@ void CGameFrameWork::FrameAdvance() {
 		}
 
 	}
-
+	if (m_pPlayer->m_ppBullets[0]) {
+		OutputDebugStringA("통과 1");
+	}
 	//서버 받는 곳
 	if (m_conneted) {
 		int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
@@ -978,12 +979,21 @@ void CGameFrameWork::FrameAdvance() {
 	
 	if (m_GameState == PlayStage)
 	{
-
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("통과 2");
+		}
 			AnimateObjects();
+			if (m_pPlayer->m_ppBullets[0]) {
+				OutputDebugStringA("통과 3");
+			}
 		if (m_bInterporation) {
 			//탱크 interporation	
 			m_pScene->InterporationTank(m_EachSinkTick, UserPosStore, m_OtherPlayer);
 			
+		}	
+		
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("통과 4");
 		}
 			SendHitBullet();
 			ProcessInput();
@@ -1003,7 +1013,7 @@ void CGameFrameWork::FrameAdvance() {
 	}
 	if (m_pPlayer) {
 		if (m_pPlayer->m_bActive) {
-			((CTanker*)(m_pPlayer))->Render(m_pd3dCommandList, m_pCamera);
+			m_pPlayer->Render(m_pd3dCommandList, m_pCamera);
 		}
 	}
 	if (m_bRenderBoundingBox) {
@@ -1011,8 +1021,8 @@ void CGameFrameWork::FrameAdvance() {
 	}
 	
 
-	if (m_pUIManager) m_pUIManager->AlDrawRect(m_pd3dCommandList);
-	if (m_pScoreManager) m_pScoreManager->AlDrawRect(m_pd3dCommandList);
+	if (m_pUIManager) { m_pUIManager->AlDrawRect(m_pd3dCommandList); }
+	if (m_pScoreManager) { m_pScoreManager->AlDrawRect(m_pd3dCommandList); }
 	
 
 
@@ -1755,7 +1765,11 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 
 		PrintPlayerInfo("로그인 성공 ", p->id);
 
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("로그인 정보패킷처리");
+		}
 		break;
+
 	}
 	case SC_ENTER_ROOM: {
 
@@ -1771,6 +1785,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			AddPlayerReadyStage(p->id);
 			//PrintPlayerInfo("방입장 성공",p->id);
 		}
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("방입장패킷처리");
+		}
 		break;
 	}
 	case SC_EXIT_ROOM: {
@@ -1784,6 +1801,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 				m_OtherPlayer[p->id].pos_num = 0;
 				m_OtherPlayer[p->id].status.change_hp(0);
 
+				if (m_pPlayer->m_ppBullets[0]) {
+					OutputDebugStringA("방나가기 패킷");
+				}
 			break;
 		}
 	}
@@ -1795,6 +1815,11 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 
 			ChangePlayerReadyStage(p->id);
 			PrintPlayerInfo("레디상태", p->id);
+		}
+
+
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("레디상태패킷처리");
 		}
 		break;
 	}
@@ -1829,6 +1854,10 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 				}
 			}
 		}
+
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("게임시작패킷");
+		}
 		break;
 	}
 	case SC_ADD_PLAYER: {
@@ -1843,6 +1872,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		}
 		else {
 			m_pPlayer->initGame(p);
+		}
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("플레이어 전송");
 		}
 		break;
 	}
@@ -1870,6 +1902,10 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 
 
 			}
+		}
+
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("이동패킷 처리");
 		}
 		break;
 	}
@@ -1918,6 +1954,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			InitPlayerGameStage();
 			ChangeHPUI();
 		}
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("플레이어 제거패킷");
+		}
 		break;
 	}
 	case SC_BULLET: {
@@ -1929,6 +1968,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			else {
 				m_pScene->RefleshBullet(p);
 			}
+		}
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("총알 패킷");
 		}
 		break;
 	}
@@ -1960,6 +2002,9 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 				}
 			}
 		}
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("히트 패킷");
+		}
 		break;
 	}
 	case SC_RESULT: {
@@ -1981,6 +2026,10 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			MakeEndStage();
 			
 
+		}
+
+		if (m_pPlayer->m_ppBullets[0]) {
+			OutputDebugStringA("결과패킷");
 		}
 		break;
 	}

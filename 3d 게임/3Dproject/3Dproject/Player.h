@@ -8,7 +8,7 @@
 #define DIR_DOWN 0x20
 
 #define bottom_frame 30.f
-#define BULLETS			30
+#define BULLETS			10
 #define MINES			2
 #include "GameObject.h"
 #include "Camera.h"

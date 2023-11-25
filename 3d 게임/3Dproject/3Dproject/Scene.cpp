@@ -483,9 +483,10 @@ ID3D12RootSignature* CScene::CreateGraphicsRootSignature(ID3D12Device* pd3dDevic
 void CScene::AnimateObjects(float fTimeElapsed) {
 
 
-	if (((CTanker*)m_pPlayer)->wheelanimation)
-		((CTanker*)m_pPlayer)->UpdateWheel();
-	((CTanker*)m_pPlayer)->Animate(fTimeElapsed);
+	if (m_pPlayer->wheelanimation) {
+		m_pPlayer->UpdateWheel();
+	}
+	m_pPlayer->Animate(fTimeElapsed);
 
 	for (BillBoard* pBill : m_BillBoardList) {
 		if(pBill->m_bActive)
