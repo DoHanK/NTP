@@ -979,22 +979,16 @@ void CGameFrameWork::FrameAdvance() {
 	
 	if (m_GameState == PlayStage)
 	{
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("통과 2");
-		}
-			AnimateObjects();
-			if (m_pPlayer->m_ppBullets[0]) {
-				OutputDebugStringA("통과 3");
-			}
+
+
+		AnimateObjects();
+	
 		if (m_bInterporation) {
 			//탱크 interporation	
 			m_pScene->InterporationTank(m_EachSinkTick, UserPosStore, m_OtherPlayer);
 			
 		}	
 		
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("통과 4");
-		}
 			SendHitBullet();
 			ProcessInput();
 
@@ -1765,9 +1759,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 
 		PrintPlayerInfo("로그인 성공 ", p->id);
 
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("로그인 정보패킷처리");
-		}
+	
 		break;
 
 	}
@@ -1785,9 +1777,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			AddPlayerReadyStage(p->id);
 			//PrintPlayerInfo("방입장 성공",p->id);
 		}
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("방입장패킷처리");
-		}
+
 		break;
 	}
 	case SC_EXIT_ROOM: {
@@ -1801,9 +1791,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 				m_OtherPlayer[p->id].pos_num = 0;
 				m_OtherPlayer[p->id].status.change_hp(0);
 
-				if (m_pPlayer->m_ppBullets[0]) {
-					OutputDebugStringA("방나가기 패킷");
-				}
+
 			break;
 		}
 	}
@@ -1818,9 +1806,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		}
 
 
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("레디상태패킷처리");
-		}
+
 		break;
 	}
 	case SC_GAME_START: {
@@ -1855,9 +1841,6 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			}
 		}
 
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("게임시작패킷");
-		}
 		break;
 	}
 	case SC_ADD_PLAYER: {
@@ -1873,9 +1856,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 		else {
 			m_pPlayer->initGame(p);
 		}
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("플레이어 전송");
-		}
+
 		break;
 	}
 	case SC_MOVE_PLAYER: {
@@ -1904,9 +1885,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			}
 		}
 
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("이동패킷 처리");
-		}
+
 		break;
 	}
 	case SC_REMOVE_PLAYER: {
@@ -1954,9 +1933,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 			InitPlayerGameStage();
 			ChangeHPUI();
 		}
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("플레이어 제거패킷");
-		}
+
 		break;
 	}
 	case SC_BULLET: {
@@ -1969,9 +1946,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 				m_pScene->RefleshBullet(p);
 			}
 		}
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("총알 패킷");
-		}
+
 		break;
 	}
 	case SC_HITTED: {
@@ -2002,9 +1977,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 				}
 			}
 		}
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("히트 패킷");
-		}
+
 		break;
 	}
 	case SC_RESULT: {
@@ -2028,9 +2001,7 @@ void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함
 
 		}
 
-		if (m_pPlayer->m_ppBullets[0]) {
-			OutputDebugStringA("결과패킷");
-		}
+
 		break;
 	}
 
