@@ -450,6 +450,16 @@ void process_packet(int c_id, char* packet)
 			m.unlock();
 		}
 
+		for (auto& pl : clients) {
+			if (pl.in_use == false)
+				continue;
+			if (clients[p->id].status.get_hp() <= 0)
+				pl.send_remove_player_packet(p->id);
+			else
+				pl.send_hitted_packet(p->id);
+
+		}
+
 		if (Rank == 1) {
 			clients[c_id].send_result_packet(c_id, 1);
 			for (auto& pl : clients) {
@@ -466,16 +476,6 @@ void process_packet(int c_id, char* packet)
 				Pos_List[i] = -1;
 			}
 			m.unlock();
-		}
-
-		for (auto& pl : clients) {
-			if (pl.in_use == false)
-				continue;
-			if (clients[p->id].status.get_hp() <= 0)
-				pl.send_remove_player_packet(p->id);
-			else
-				pl.send_hitted_packet(p->id);
-
 		}
 
 		break;
