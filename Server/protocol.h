@@ -84,15 +84,13 @@ struct CS_ATTACK_PACKET {
 struct CS_EXIT_ROOM_PACKET {
 	unsigned short	size;
 	char			type;
-	int				id;
 };
 
 struct SC_LOGIN_INFO_PACKET {																														// S -> C 로그인 정보 패킷
 	unsigned short	size;
 	char			type;
 	short			id;
-	int				money;
-	char			 userName[NAME_SIZE];
+	char			userName[NAME_SIZE];
 	XMFLOAT3		pos;
 	XMFLOAT3		top_dir;
 	XMFLOAT3		bottom_dir;
@@ -161,6 +159,7 @@ struct SC_ENTER_ROOM_PACKET {
 	char			name[NAME_SIZE];
 	int				color;
 	int				pos_num;
+	bool			ready;
 };
 
 struct SC_GAME_START_PACKET {

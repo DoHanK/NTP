@@ -32,7 +32,8 @@ int RandomNumber;
 
 XMFLOAT3 Default_Pos{0,0,0};
 
-bool ingame = false;
+enum STAGE { ST_OFFLINE, ST_LOGIN, ST_READY_ROOM, ST_INGAME };
+
 
 class Status {
 private:
@@ -83,12 +84,10 @@ public:
 
 class SESSION {
 public:
-	bool			in_use;
 	int				id;
 	SOCKET			socket;
 	Status			status;
 	int				color;
-	int				money;
 	std::string		userName;
 	bool			ready;
 	char			recvBuffer[BUF_SIZE];
@@ -97,11 +96,12 @@ public:
 	int				sendLen;
 	bool			error;
 	int				pos_num;
+	char			remainBuffer[BUF_SIZE*2];
 	int				remainLen;
-	char			remainBuffer[BUF_SIZE * 2];
-	char			remainBuffer2[BUF_SIZE * 2];
+	int				prev_remain;
+	STAGE			stage;
 public:
-	SESSION() : socket(0), in_use(false)
+	SESSION() : socket(0)
 	{
 		id = -1;
 		status.change_pos({ 0.f, 0.f, 0.f });
@@ -109,11 +109,13 @@ public:
 		status.change_bottom_dir({ 0.f, 1.f, 0.f });
 		status.change_hp(100);
 		remainLen = 0;
+		prev_remain = 0;
 		ready = false;
 		memset(remainBuffer, 0, sizeof(remainBuffer));
 		for (int i = 0; i < 30; ++i) {
 			status.in_use_bullets[i] = false;
 		}
+		stage = ST_OFFLINE;
 	}
 
 	~SESSION() {}
@@ -125,12 +127,13 @@ public:
 		if (recvLen <= 0)
 		{
 			int errCode = ::WSAGetLastError();
-			std::cout << "Bind ErrorCode : " << errCode << endl;
+			std::cout << "Recv ErrorCode : " << errCode << endl;
 			error = true;
 			Room[pos_num] = -1;
 			status.change_hp(0);
 			return;
 		}
+		
 		memcpy(remainBuffer + remainLen, recvBuffer, recvLen);
 		int remain_data = recvLen + remainLen;
 		char* p = remainBuffer;
@@ -167,7 +170,6 @@ public:
 		p.size = sizeof(SC_LOGIN_INFO_PACKET);
 		p.type = SC_LOGIN_INFO;
 		p.id = id;
-		p.money = money;
 		strcpy(p.userName, userName.c_str());
 		p.pos = status.get_pos();
 		p.top_dir = status.get_top_dir();
@@ -206,6 +208,7 @@ void SESSION::send_enter_room_packet(int c_id)
 	strcpy(p.name, clients[c_id].userName.c_str());
 	p.color = clients[c_id].color;
 	p.pos_num = clients[c_id].pos_num;
+	p.ready = clients[c_id].ready;
 	do_send(&p);
 }
 
@@ -293,60 +296,92 @@ void SESSION::send_hitted_packet(int c_id)
 	do_send(&p);
 }
 
-void reset_session(int c_id) 
+void set_clientId(int c_id)
 {
 	clients[c_id].id = c_id;
 }
 
 void process_packet(int c_id, char* packet)
 {
-	//cout << "process_packet called" << endl;
 	switch (packet[2]) {
 	case CS_LOGIN: {
 		std::cout << "Recv Login Packet From Client Num : " << c_id << endl;
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
-		reset_session(c_id);
+		set_clientId(c_id);
 		clients[c_id].userName = p->name;
 		clients[c_id].send_login_info_packet();
 		std::cout << "User Name - " << clients[c_id].userName << endl;
 		std::cout << "Send Login Info Packet To Client Num : " << c_id << endl;
 		break;
 	}
+	case CS_ENTER_ROOM: {
+		std::cout << "Recv Enter Room Packet From Client Num : " << c_id << endl;
+		CS_ENTER_ROOM_PACKET* p = reinterpret_cast<CS_ENTER_ROOM_PACKET*>(packet);
+
+		m.lock();
+		for (int i = 0; i < Room.size(); ++i) {
+			if (Room[i] == -1) {
+				Room[i] = c_id;
+				clients[c_id].pos_num = i;
+				break;
+			}
+		}
+		m.unlock();
+
+		clients[c_id].color = p->color;
+		clients[c_id].stage = ST_READY_ROOM;
+		clients[c_id].status.change_pos({ 0.f,0.f,0.f });
+		clients[c_id].status.change_top_dir({ 0.f,0.f,0.f });
+		clients[c_id].status.change_bottom_dir({ 0.f,0.f,0.f });
+
+		for (auto& pl : clients) {
+			if (pl.stage != ST_READY_ROOM)
+				continue;
+			/*if (pl.id == c_id)
+				continue;*/
+			pl.send_enter_room_packet(c_id);
+			clients[c_id].send_enter_room_packet(pl.id);
+
+		}
+		break;
+	}
 	case CS_READY: {
-		if (ingame)
-			break;
-		CS_READY_PACKET* p = reinterpret_cast<CS_READY_PACKET*>(packet);
 		if (clients[c_id].ready)
 			clients[c_id].ready = false;
 		else
 			clients[c_id].ready = true;
-		std::cout << "레디 패킷 전송" << std::endl;
+
+		if (clients[c_id].stage != ST_READY_ROOM)
+			break;
+		//std::cout << "레디 패킷 전송" << std::endl;
 
 		for (auto& pl : clients) {
-			if (pl.in_use == false)
+			if (pl.stage != ST_READY_ROOM)
 				continue;
 			pl.send_ready_packet(c_id);
 		}
 
+		m.lock();
 		for (int i = 0; i < Room.size(); ++i) {
-			if (Room[i] == -1)
+			if (Room[i] == -1) {
+				m.unlock();
 				return;
+			}
 		}
 
 		if (clients[Room[0]].ready && clients[Room[1]].ready && clients[Room[2]].ready) {
-			m.lock();
-			ingame = true;
-			m.unlock();
+			for (int i = 0; i < Room.size(); ++i) {
+				Room[i] = -1;
+			}
 			for (auto& pl : clients) {
-				if (pl.in_use == false)
+				if (pl.stage != ST_READY_ROOM)
 					continue;
+				pl.stage = ST_INGAME;
 				pl.send_game_start_packet();
 			}
+			m.unlock();
 
 			for (auto& pl : clients) {										// 각 클라이언트 생성 위치 지정
-				if (pl.in_use == false)
-					continue;
-				m.lock();
 				for (;;) {
 					RandomNumber = std::rand() % 8;
 					if (Pos_List[RandomNumber] == -1) {
@@ -354,61 +389,43 @@ void process_packet(int c_id, char* packet)
 						break;
 					}
 				}
-				m.unlock();
 				pl.status.change_pos(Poses[RandomNumber]);
 			}
 
 			for (auto& pl : clients) {
-				if (pl.in_use == false)
+				if (pl.stage != ST_INGAME)
 					continue;
 				pl.send_add_player_packet(0);
 				pl.send_add_player_packet(1);
 				pl.send_add_player_packet(2);
 			}
 		}
-		break;
-	}
-	case CS_ENTER_ROOM: {
-		std::cout << "Recv Enter Room Packet From Client Num : " << c_id << endl;
-
-		CS_ENTER_ROOM_PACKET* p = reinterpret_cast<CS_ENTER_ROOM_PACKET*>(packet);
-		for (int i = 0; i < Room.size(); ++i) {
-			m.lock();
-			if (Room[i] == -1) {
-				Room[i] = c_id;
-				clients[c_id].pos_num = i;
-				m.unlock();
-				break;
-			}
+		else
 			m.unlock();
-		}
-		clients[c_id].color = p->color;
-
-		for (auto& pl : clients) {
-			if (pl.in_use == false)
-				continue;
-			if (pl.id == c_id)
-				continue;
-			pl.send_enter_room_packet(c_id);
-		}
-		for (int i = 0; i < Room.size(); ++i) {
-			if (Room[i] != -1)
-				clients[c_id].send_enter_room_packet(Room[i]);
-		}
 		break;
 	}
+
 	case CS_EXIT_ROOM: {
+		if (clients[c_id].stage != ST_READY_ROOM)
+			break;
 		CS_EXIT_ROOM_PACKET* p = reinterpret_cast<CS_EXIT_ROOM_PACKET*>(packet);
-		clients[p->id].ready = false;
+		clients[c_id].ready = false;
 		m.lock();
-		Room[clients[p->id].pos_num] = -1;
+		Room[clients[c_id].pos_num] = -1;
+		clients[c_id].stage = ST_LOGIN;
 		m.unlock();
 		for (auto& pl : clients) {
-			pl.send_exit_room_packet(p->id);
+			if (pl.stage != ST_READY_ROOM)
+				continue;
+			pl.send_exit_room_packet(c_id);
 		}
 		break;
 	}
 	case CS_MOVE: {
+		if (clients[c_id].stage != ST_INGAME)
+			break;
+		if (clients[c_id].status.get_hp() <= 0)
+			break;
 		CS_MOVE_PACKET* p = reinterpret_cast<CS_MOVE_PACKET*>(packet);
 
 		clients[c_id].status.change_pos(p->pos);
@@ -416,21 +433,38 @@ void process_packet(int c_id, char* packet)
 		clients[c_id].status.change_bottom_dir(p->bottom_dir);
 
 		for (auto& pl : clients) {
-			if (pl.in_use == false)
+			if (pl.stage != ST_INGAME)
 				continue;
 			if (pl.id == c_id)
 				continue;
 			pl.send_move_packet(c_id);
 		}
+
+		if (Rank == 1) {
+			clients[c_id].stage = ST_LOGIN;
+			clients[c_id].send_result_packet(c_id, 1);
+			for (auto& pl : clients) {
+				pl.status.change_hp(100);
+				pl.ready = false;
+				Rank = 3;
+			}
+			for (int i = 0; i < Pos_List.size(); ++i) {
+				Pos_List[i] = -1;
+			}
+		}
 		break;
 	}
 	case CS_BULLET: {
+		if (clients[c_id].stage != ST_INGAME)
+			break;
+		if (clients[c_id].status.get_hp() <= 0)
+			break;
 		CS_BULLET_PACKET* p = reinterpret_cast<CS_BULLET_PACKET*>(packet);
 		memcpy(&clients[c_id].status.bullets_pos, &p->bullets_pos, sizeof(p->bullets_pos));
 		memcpy(&clients[c_id].status.bullets_dir, &p->bullets_dir, sizeof(p->bullets_dir));
 		memcpy(&clients[c_id].status.in_use_bullets, &p->in_use_bullets, sizeof(p->in_use_bullets));
 		for (auto& pl : clients) {
-			if (pl.in_use == false)
+			if (pl.stage != ST_INGAME)
 				continue;
 			if (pl.id == c_id)
 				continue;
@@ -439,19 +473,18 @@ void process_packet(int c_id, char* packet)
 		break;
 	}
 	case CS_ATTACK: {
+		if (clients[c_id].stage != ST_INGAME)
+			break;
+		if (clients[c_id].status.get_hp() <= 0)
+			break;
 		CS_ATTACK_PACKET* p = reinterpret_cast<CS_ATTACK_PACKET*>(packet);
-		if (p->id != -1) {
-			clients[p->id].status.change_hp(clients[p->id].status.get_hp() - 10);
-		}
-		if (clients[p->id].status.get_hp() <= 0) {
-			m.lock();
-			clients[p->id].send_result_packet(p->id, Rank);
-			Rank--;
-			m.unlock();
-		}
+
+
+		m.lock();
+		clients[p->id].status.change_hp(clients[p->id].status.get_hp() - 10);
 
 		for (auto& pl : clients) {
-			if (pl.in_use == false)
+			if (pl.stage != ST_INGAME)
 				continue;
 			if (clients[p->id].status.get_hp() <= 0)
 				pl.send_remove_player_packet(p->id);
@@ -460,22 +493,27 @@ void process_packet(int c_id, char* packet)
 
 		}
 
+		if (clients[p->id].status.get_hp() <= 0) {
+			if(clients[p->id].stage == ST_INGAME)
+			{
+				clients[p->id].stage = ST_LOGIN;
+				clients[p->id].send_result_packet(p->id, Rank);
+				Rank--;
+			}
+		}
+		m.unlock();
+
 		if (Rank == 1) {
+			clients[c_id].stage = ST_LOGIN;
 			clients[c_id].send_result_packet(c_id, 1);
 			for (auto& pl : clients) {
 				pl.status.change_hp(100);
 				pl.ready = false;
 				Rank = 3;
-				ingame = false;
-			}
-			m.lock();
-			for (int i = 0; i < MAX_USER; ++i) {
-				Room[i] = -1;
 			}
 			for (int i = 0; i < Pos_List.size(); ++i) {
 				Pos_List[i] = -1;
 			}
-			m.unlock();
 		}
 
 		break;
@@ -486,8 +524,9 @@ void process_packet(int c_id, char* packet)
 int get_new_client_id()
 {
 	for (int i = 0; i < MAX_USER; ++i)
-		if (clients[i].in_use == false)
+		if (clients[i].stage == ST_OFFLINE) {
 			return i;
+		}
 	return -1;
 }
 
@@ -496,24 +535,25 @@ int get_new_client_id()
 																																				// 클라이언트와 데이터 통신
 DWORD WINAPI ProcessClient(LPVOID arg)
 {
+	m.lock();
 	int client_id = get_new_client_id();
 	if (client_id != -1) {
-		clients[client_id].in_use = true;
-		clients[client_id].money = 123;
+		clients[client_id].stage = ST_LOGIN;
+		m.unlock();
 		clients[client_id].status.change_pos({ 0.f,0.f,0.f });
 		clients[client_id].status.change_top_dir({ 0.f,0.f,0.f });
 		clients[client_id].status.change_bottom_dir({ 0.f,0.f,0.f });
-
+		clients[client_id].status.change_hp(100);
 
 		clients[client_id].id = client_id;
 		clients[client_id].ready = false;
 		clients[client_id].error = false;
 		clients[client_id].socket = (SOCKET)arg;
-		
-		clients[client_id].status.change_hp(100);
+	
 		cout << "Client [" << client_id << "] Login" << endl;
 	}
 	else {
+		m.unlock();
 		cout << "Max user exceeded.\n";
 	}
 
@@ -523,10 +563,9 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 			break;
 		}
 	}
-
-																																						// 소켓 닫기
+																												// 소켓 닫기
 	closesocket(clients[client_id].socket);
-	clients[client_id].in_use = false;
+	clients[client_id].stage = ST_OFFLINE;
 	cout << clients[client_id].id << " 번 클라이언트 종료"<<endl;
 	return 0;
 }

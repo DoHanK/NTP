@@ -1736,7 +1736,6 @@ void CGameFrameWork::SendEXitRoom()
 	CS_EXIT_ROOM_PACKET p;
 	p.size = sizeof(CS_EXIT_ROOM_PACKET);
 	p.type = CS_EXIT_ROOM;
-	p.id = m_myid;
 
 	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
 	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
@@ -1754,7 +1753,6 @@ void CGameFrameWork::process_packet(char* packet)								//패킷 처리함수
 		SC_LOGIN_INFO_PACKET* p = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(packet);
 		m_myid = p->id;
 		m_OtherPlayer[m_myid].id = p->id;
-		m_OtherPlayer[m_myid].money = p->money;
 		m_OtherPlayer[m_myid].userName = p->userName;
 
 		PrintPlayerInfo("로그인 성공 ", p->id);
@@ -1772,6 +1770,7 @@ void CGameFrameWork::process_packet(char* packet)								//패킷 처리함수
 			m_OtherPlayer[p->id].color = p->color;
 			m_OtherPlayer[p->id].pos_num = p->pos_num;
 			m_OtherPlayer[p->id].status.change_hp(100);
+			m_OtherPlayer[p->id].ready = p->ready;
 			PrintPlayerInfo("방입장 성공", p->id);
 
 			AddPlayerReadyStage(p->id);
