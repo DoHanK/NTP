@@ -951,29 +951,27 @@ void CGameFrameWork::FrameAdvance() {
 
 	//서버 받는 곳
 	if (m_conneted) {
-
-		int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
-		if (::WSAGetLastError() == WSAEWOULDBLOCK) {
-
-		}
-		else {
-
-			memcpy(m_RemainBuffer + remainLen, m_RecvBuffer, recvLen);
-
-			int remain_data = recvLen + remainLen;
-			char* p = m_RemainBuffer;
-			while (remain_data > 0) {
-				int packet_size = (int)(MAKEWORD(p[0], p[1]));
-				if (packet_size <= remain_data) {
-					process_packet(0, p);
-					p = p + packet_size;
-					remain_data = remain_data - packet_size;
-				}
-				else break;
+		while (true) {
+			int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
+			if (::WSAGetLastError() == WSAEWOULDBLOCK) {
+				break;
 			}
-			remainLen = remain_data;
-			if (remain_data > 0) {
-				memcpy(m_RemainBuffer, p, remain_data);
+			char* ptr = m_RecvBuffer;
+			while (recvLen != 0) {
+				if (0 == now_packet_size) now_packet_size = (MAKEWORD(ptr[0], ptr[1]));
+				if (recvLen + remainLen >= now_packet_size) {
+					memcpy(m_RemainBuffer + remainLen, ptr, now_packet_size - remainLen);
+					process_packet(m_RemainBuffer);
+					ptr += now_packet_size - remainLen;
+					recvLen -= now_packet_size - remainLen;
+					now_packet_size = 0;
+					remainLen = 0;
+				}
+				else {
+					memcpy(m_RemainBuffer + remainLen, ptr, recvLen);
+					remainLen += recvLen;
+					recvLen = 0;
+				}
 			}
 		}
 	}
@@ -1747,7 +1745,7 @@ void CGameFrameWork::SendEXitRoom()
 
 
 
-void CGameFrameWork::process_packet(int c_id, char* packet)								//패킷 처리함수
+void CGameFrameWork::process_packet(char* packet)								//패킷 처리함수
 {
 	cout << "process_packet called" << endl;
 	switch (packet[2]) {

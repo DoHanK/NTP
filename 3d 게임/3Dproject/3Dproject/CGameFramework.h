@@ -96,10 +96,11 @@ private:
 	char	m_SendBuffer[BUF_SIZE];																												// SendBuffer
 	int		sendLen;																													
 	char	m_RecvBuffer[BUF_SIZE];																												// RecvBuffer
-	int		recvLen;
+	int		recvLen = 0;
 	char	m_RemainBuffer[BUF_SIZE * 100];
 	char	m_BarrierBuffer[BUF_SIZE * 100];
-	int		remainLen;
+	int		remainLen = 0;
+	int		now_packet_size = 0;
 	char	KeyInputBuffer[NameBufferSize];
 public:
 	CGameFrameWork();
@@ -194,7 +195,7 @@ public:
 
 	bool	m_conneted = false;
 	//Recv정보 처리 함수
-	void process_packet(int c_id, char* packet);
+	void process_packet(char* packet);
 
 	//print Player Info
 	void PrintPlayerInfo(std::string s, int c_id);
