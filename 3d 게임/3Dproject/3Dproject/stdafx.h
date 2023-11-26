@@ -113,6 +113,7 @@ extern ID3D12Resource* CreateTextureResourceFromDDSFile(ID3D12Device* pd3dDevice
 
 
 
+
 #define RANDOM_COLOR			XMFLOAT4(rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX))
 #define RANDOM_SIGN ((rand() % 2 == 0) ? 1 : -1) // 랜덤으로 1 또는 -1을 반환
 #define EPSILON					1.0e-10f
@@ -121,6 +122,12 @@ inline bool IsZero(float fValue) { return((fabsf(fValue) < EPSILON)); }
 inline bool IsEqual(float fA, float fB) { return(::IsZero(fA - fB)); }
 inline float InverseSqrt(float fValue) { return 1.0f / sqrtf(fValue); }
 inline void Swap(float* pfS, float* pfT) { float fTemp = *pfS; *pfS = *pfT; *pfT = fTemp; }
+
+
+inline float VectorSize(XMFLOAT3 V) {
+
+	return (float)sqrt(V.x * V.x + V.y * V.y + V.z * V.z);
+}
 
 inline int ReadUnityBinaryString(FILE* pFile, char* pstrToken, BYTE* pnStrLength)
 {

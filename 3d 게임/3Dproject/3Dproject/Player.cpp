@@ -638,10 +638,7 @@ void CTanker::FindFrameSet() {
 
 }
 
-float CTanker::VectorSize(XMFLOAT3 V) {
 
-	return (float)sqrt(V.x * V.x + V.y * V.y + V.z * V.z);
-}
 
 void CTanker::Animate(float fTimeEelapsed)
 {

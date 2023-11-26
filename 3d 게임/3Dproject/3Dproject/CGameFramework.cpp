@@ -643,7 +643,7 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 								if (m_pPlayer) {
 									//플레이어 초기화
 									m_pPlayer->m_bActive = true;
-						
+									
 								}
 								for (auto& m : m_pScene->m_BillBoardList) {
 									m->m_row = 0;
@@ -661,7 +661,14 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 								for (auto& tank : m_pScene->CTankObjects) {
 									tank->m_bActive = false;
 								}
-								
+								for (int id = 0; id < MAX_USER; ++id) {
+									for (int i = 0; i < BULLETS; ++i) {
+										if (id == m_myid) {
+											m_pPlayer->m_ppBullets[i]->m_bActive = false;
+										}
+										m_pScene->AllBullets[id][i].m_bActive = false;
+									}
+								}
 
 								m_ready = false;
 								m_GameState = LoginStage;

@@ -8,7 +8,7 @@
 #define DIR_DOWN 0x20
 
 #define bottom_frame 30.f
-#define BULLETS			10
+#define BULLETS			30
 #define MINES			2
 #include "GameObject.h"
 #include "Camera.h"
@@ -181,7 +181,6 @@ public:
 	virtual void UpdateAllTansform();
 	void UpdateWheel();
 	void FindFrameSet();
-	float VectorSize(XMFLOAT3 V);
 	virtual void Animate(float fTimeEelapsed);
 
 	//미사일 관련
