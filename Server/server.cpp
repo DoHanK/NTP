@@ -47,6 +47,8 @@ public:
 	array<XMFLOAT3, MAX_BULLETS> bullets_pos;
 	array<XMFLOAT3, MAX_BULLETS> bullets_dir;
 	array<bool, MAX_BULLETS> in_use_bullets;
+	array<XMFLOAT3, MAX_MINES> mines_pos;
+	array<bool, MAX_MINES> in_use_mines;
 	// setter
 	void change_hp(int Hp) {
 		hp = Hp;
@@ -276,6 +278,9 @@ void SESSION::send_bullet_packet(int c_id)
 	memcpy(&p.bullets_pos,&clients[c_id].status.bullets_pos, sizeof(clients[c_id].status.bullets_pos));
 	memcpy(&p.bullets_dir,&clients[c_id].status.bullets_dir, sizeof(clients[c_id].status.bullets_dir));
 	memcpy(&p.in_use_bullets,&clients[c_id].status.in_use_bullets, sizeof(clients[c_id].status.in_use_bullets));
+	memcpy(&p.mines_pos, &clients[c_id].status.mines_pos, sizeof(clients[c_id].status.mines_pos));
+	memcpy(&p.in_use_mines, &clients[c_id].status.in_use_mines, sizeof(clients[c_id].status.in_use_mines));
+
 	do_send(&p);
 }
 
@@ -466,6 +471,9 @@ void process_packet(int c_id, char* packet)
 		memcpy(&clients[c_id].status.bullets_pos, &p->bullets_pos, sizeof(p->bullets_pos));
 		memcpy(&clients[c_id].status.bullets_dir, &p->bullets_dir, sizeof(p->bullets_dir));
 		memcpy(&clients[c_id].status.in_use_bullets, &p->in_use_bullets, sizeof(p->in_use_bullets));
+		memcpy(&clients[c_id].status.mines_pos, &p->mines_pos, sizeof(p->mines_pos));
+		memcpy(&clients[c_id].status.in_use_mines, &p->in_use_mines, sizeof(p->in_use_mines));
+
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
@@ -473,6 +481,54 @@ void process_packet(int c_id, char* packet)
 				continue;
 			pl.send_bullet_packet(c_id);
 		}
+		break;
+	}
+
+	case CS_MINE_ATTACK: {
+		if (clients[c_id].stage != ST_INGAME)
+			break;
+		if (clients[c_id].status.get_hp() <= 0)
+			break;
+
+		CS_MINE_ATTACK_PACKET* p = reinterpret_cast<CS_MINE_ATTACK_PACKET*>(packet);
+
+
+		m.lock();
+		clients[p->id].status.change_hp(clients[p->id].status.get_hp() - 50);
+
+		for (auto& pl : clients) {
+			if (pl.stage != ST_INGAME)
+				continue;
+			if (clients[p->id].status.get_hp() <= 0)
+				pl.send_remove_player_packet(p->id);
+			else
+				pl.send_hitted_packet(p->id);
+
+		}
+
+		if (clients[p->id].status.get_hp() <= 0) {
+			if (clients[p->id].stage == ST_INGAME)
+			{
+				clients[p->id].stage = ST_LOGIN;
+				clients[p->id].send_result_packet(p->id, Rank);
+				Rank--;
+			}
+		}
+		m.unlock();
+
+		if (Rank == 1) {
+			clients[c_id].stage = ST_LOGIN;
+			clients[c_id].send_result_packet(c_id, 1);
+			for (auto& pl : clients) {
+				pl.status.change_hp(100);
+				pl.ready = false;
+			}
+			Rank = 3;
+			for (int i = 0; i < Pos_List.size(); ++i) {
+				Pos_List[i] = -1;
+			}
+		}
+
 		break;
 	}
 	case CS_ATTACK: {
@@ -512,8 +568,8 @@ void process_packet(int c_id, char* packet)
 			for (auto& pl : clients) {
 				pl.status.change_hp(100);
 				pl.ready = false;
-				Rank = 3;
 			}
+			Rank = 3;
 			for (int i = 0; i < Pos_List.size(); ++i) {
 				Pos_List[i] = -1;
 			}
