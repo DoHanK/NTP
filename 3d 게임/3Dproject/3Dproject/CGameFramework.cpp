@@ -644,6 +644,7 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 									//플레이어 초기화
 									m_pPlayer->m_bActive = true;
 									
+					
 								}
 								for (auto& m : m_pScene->m_BillBoardList) {
 									m->m_row = 0;
@@ -668,7 +669,17 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 										}
 										m_pScene->AllBullets[id][i].m_bActive = false;
 									}
+
+									for (int i = 0; i < MINES; ++i) {
+										if (id == m_myid) {
+											m_pPlayer->m_pMine[i]->m_bActive = false;
+										}
+										m_pScene->AllMines[id][i].m_bActive = false;
+									}
 								}
+
+								
+								
 
 								m_ready = false;
 								m_GameState = LoginStage;
@@ -995,7 +1006,7 @@ void CGameFrameWork::FrameAdvance() {
 			m_pScene->InterporationTank(m_EachSinkTick, UserPosStore, m_OtherPlayer);
 			
 		}	
-		
+			SendHitMInes();
 			SendHitBullet();
 			ProcessInput();
 
@@ -1692,6 +1703,19 @@ void CGameFrameWork::SendBulletInfoInPlaying()
 			p.in_use_bullets[i] = false;
 		}
 	}
+	for (int i = 0; i < MINES; ++i) {
+
+		if (m_pPlayer->m_pMine[i]->m_bActive) {
+			XMFLOAT3 temp = XMFLOAT3(m_pPlayer->m_pMine[i]->m_xmf4x4World._41, m_pPlayer->m_pMine[i]->m_xmf4x4World._42, m_pPlayer->m_pMine[i]->m_xmf4x4World._43);
+
+			p.mines_pos[i] = temp;
+			p.in_use_mines[i] = true;
+		}
+		else {
+			p.in_use_mines[i] = false;
+		}
+		
+	}
 	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
 	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
 
@@ -1732,6 +1756,45 @@ void CGameFrameWork::SendHitBullet()
 
 		}
 		
+	}
+
+
+}
+
+void CGameFrameWork::SendHitMInes()
+{
+	CS_MINE_ATTACK_PACKET p;
+	p.size = sizeof(CS_MINE_ATTACK_PACKET);
+	p.type = CS_MINE_ATTACK;
+
+	for (int i = 0; i < MINES; ++i) {
+
+		if (m_pPlayer != NULL) {
+
+			if (m_pPlayer->m_pMine != NULL) {
+
+				if (m_pPlayer->m_pMine[i]) {
+
+					for (int id = 0; id < MAX_USER; ++id) {
+
+						if (m_pScene->CTankObjects[id]->m_bActive) {
+							if (m_pScene->CTankObjects[id]->m_BoundingBox.Intersects(m_pPlayer->m_pMine[i]->m_BoundingBox) || m_pScene->CTankObjects[id]->TopBoundingBox.Intersects(m_pPlayer->m_pMine[i]->m_BoundingBox)) {
+
+								m_pPlayer->m_pMine[i]->m_bActive = false;
+
+								p.id = id;
+							
+								memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_MINE_ATTACK_PACKET));
+								send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+							}
+						}
+					}
+
+				}
+			}
+
+		}
+
 	}
 
 
@@ -1844,7 +1907,26 @@ void CGameFrameWork::process_packet(char* packet)								//패킷 처리함수
 					m_pScene->AllBullets[id][i].SetRotationAxis(XMFLOAT3(0.0f, 0.0f, 1.0f));
 					m_pScene->AllBullets[id][i].SetRotationSpeed(360.0f);
 				}
+				
+				for (int i = 0; i < MINES; ++i) {
+
+
+					if (m_OtherPlayer[id].color == 0) {
+						m_pScene->AllMines[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementBlue.dds");
+					}
+					else if (m_OtherPlayer[id].color == 1) {
+						m_pScene->AllMines[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementRed.dds");
+					}
+					else if (m_OtherPlayer[id].color == 2) {
+						m_pScene->AllMines[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementGreen.dds");
+					}
+					else if (m_OtherPlayer[id].color == 3) {
+						m_pScene->AllMines[id][i].m_TextureAddr = m_pMeshManager->BringTexture("Texture/ElementYellow.dds");
+					}
+					m_pScene->AllMines[id][i].m_bActive = false;
+				}
 			}
+
 		}
 
 		break;

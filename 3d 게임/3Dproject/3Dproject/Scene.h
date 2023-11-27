@@ -101,6 +101,7 @@ class CScene
 	LIGHTS* m_pcbMappedLights = NULL;
 	
 	CMissile AllBullets[MAX_USER][BULLETS];
+	CMine   AllMines[MAX_USER][MINES];
 	//총알 정보 담기
 	XMFLOAT3 AllBullets_pos[MAX_USER][BULLETS];
 	XMFLOAT3 AllBullets_prevpos[MAX_USER][BULLETS];

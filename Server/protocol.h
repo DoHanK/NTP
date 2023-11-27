@@ -6,6 +6,7 @@ constexpr int PORT_NUM = 4000;
 constexpr int BUF_SIZE = 1000;
 constexpr int NAME_SIZE = 40;
 constexpr int MAX_BULLETS = 30;
+constexpr int MAX_MINES = 2;
 
 constexpr int MAX_USER = 3;
 
@@ -62,6 +63,9 @@ struct CS_BULLET_PACKET {																															// C -> S 총알 패킷
 	std::array<XMFLOAT3, MAX_BULLETS>		bullets_pos;
 	std::array<XMFLOAT3, MAX_BULLETS>		bullets_dir;
 	std::array<bool, MAX_BULLETS>			in_use_bullets;
+	std::array<XMFLOAT3, MAX_MINES>			mines_pos;
+	std::array<bool, MAX_MINES>			in_use_mines;
+	
 };
 
 struct CS_READY_PACKET {																															// C -> S 레디 패킷
@@ -151,6 +155,8 @@ struct SC_BULLET_PACKET {																															// S -> C 총알 패킷
 	std::array<XMFLOAT3, MAX_BULLETS>		bullets_pos;
 	std::array<XMFLOAT3, MAX_BULLETS>		bullets_dir;
 	std::array<bool, MAX_BULLETS>			in_use_bullets;
+	std::array<XMFLOAT3, MAX_MINES>			mines_pos;
+	std::array<bool, MAX_MINES>			in_use_mines;
 };
 
 struct SC_READY_PACKET {

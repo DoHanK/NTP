@@ -208,5 +208,6 @@ public:
 
 	void SendHitBullet();
 
+	void SendHitMInes();
 	void SendEXitRoom();
 };

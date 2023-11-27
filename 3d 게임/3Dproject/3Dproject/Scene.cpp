@@ -320,6 +320,15 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 			AllBullets[i][j].m_bActive = false;
 		}
 	}
+
+	for (int i = 0; i < MAX_USER; ++i) {
+
+		for (int j = 0; j < MINES; ++j) {
+			AllMines[i][j].m_pMesh = m_MeshManager->BringMesh("Models/Mine.bin");
+			AllMines[i][i].m_TextureAddr = m_MeshManager->BringTexture("Texture/ElementBlue.dds");
+			AllMines[i][j].m_bActive = false;
+		}
+	}
 }
 
 void CScene::ReleaseObjects() {
@@ -611,6 +620,16 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamrea
 
 			}
 
+		}
+	}
+
+	for (int id = 0; id < MAX_USER; ++id) {
+		for (int i = 0; i < MINES; ++i) {
+			
+				AllMines[id][i].UpdateAllTansform();
+				AllMines[id][i].Render(pd3dCommandList, pCamrea);
+
+			
 		}
 	}
 
@@ -1122,6 +1141,34 @@ void CScene::RefleshBullet(void* packet)
 		}
 	}
 
+	for (int i = 0; i < MINES; ++i) {
 
+		if (p->in_use_mines[i]) {
+
+			AllMines[p->id][i].m_xmf4x4World._11 = 1.0f;
+			AllMines[p->id][i].m_xmf4x4World._12 = 0.0f;
+			AllMines[p->id][i].m_xmf4x4World._13 = 0.0f;
+			AllMines[p->id][i].m_xmf4x4World._14 = 0.0f;
+
+			AllMines[p->id][i].m_xmf4x4World._21 = 0.0f;
+			AllMines[p->id][i].m_xmf4x4World._22 = 1.0f;
+			AllMines[p->id][i].m_xmf4x4World._23 = 0.0f;
+			AllMines[p->id][i].m_xmf4x4World._24 = 0.0f;
+			XMFLOAT3 LookVector = Vector3::CrossProduct(XMFLOAT3(1, 0, 0), XMFLOAT3(0, 1, 0));
+			AllMines[p->id][i].m_xmf4x4World._31 = LookVector.x;
+			AllMines[p->id][i].m_xmf4x4World._32 = LookVector.y;
+			AllMines[p->id][i].m_xmf4x4World._33 = LookVector.z;
+			AllMines[p->id][i].m_xmf4x4World._34 = 0.0f;
+
+			AllMines[p->id][i].m_xmf4x4World._41 = p->mines_pos[i].x;
+			AllMines[p->id][i].m_xmf4x4World._42 = p->mines_pos[i].y;
+			AllMines[p->id][i].m_xmf4x4World._43 = p->mines_pos[i].z;
+			AllMines[p->id][i].m_xmf4x4World._44 = 1.0f;
+
+
+			AllMines[p->id][i].m_bActive = true;
+
+		}
+	}
 
 }
