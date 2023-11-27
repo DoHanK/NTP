@@ -17,6 +17,7 @@ constexpr char CS_ENTER_ROOM = 3;
 constexpr char CS_BULLET = 4;
 constexpr char CS_ATTACK = 5;
 constexpr char CS_EXIT_ROOM = 6;
+constexpr char CS_MINE_ATTACK = 7;
 
 constexpr char SC_LOGIN_INFO = 2;
 constexpr char SC_ADD_PLAYER = 3;
@@ -81,6 +82,13 @@ struct CS_ATTACK_PACKET {
 	int				id;
 	int				bullet_index;
 };
+
+struct CS_MINE_ATTACK_PACKET {
+	unsigned short	size;
+	char			type;
+	int				id;
+};
+
 struct CS_EXIT_ROOM_PACKET {
 	unsigned short	size;
 	char			type;
