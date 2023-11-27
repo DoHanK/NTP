@@ -129,7 +129,10 @@ public:
 			int errCode = ::WSAGetLastError();
 			std::cout << "Recv ErrorCode : " << errCode << endl;
 			error = true;
+			m.lock();
 			Room[pos_num] = -1;
+			m.unlock();
+
 			status.change_hp(0);
 			return;
 		}
@@ -560,6 +563,10 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 	while (1) {
 		clients[client_id].do_recv();
 		if (clients[client_id].error) {
+			clients[client_id].stage = ST_OFFLINE;
+			for (auto& pl : clients)
+				if (pl.stage == ST_READY_ROOM)
+					pl.send_exit_room_packet(client_id);
 			break;
 		}
 	}
