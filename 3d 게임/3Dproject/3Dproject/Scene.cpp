@@ -625,11 +625,11 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamrea
 
 	for (int id = 0; id < MAX_USER; ++id) {
 		for (int i = 0; i < MINES; ++i) {
-			
+			if (AllMines[id][i].m_bActive) {
 				AllMines[id][i].UpdateAllTansform();
 				AllMines[id][i].Render(pd3dCommandList, pCamrea);
 
-			
+			}
 		}
 	}
 
