@@ -311,6 +311,8 @@ void set_clientId(int c_id)
 
 void process_packet(int c_id, char* packet)
 {
+	//std::cout << "받은 아이디" << c_id << std::endl;
+
 	switch (packet[2]) {
 	case CS_LOGIN: {
 		std::cout << "Recv Login Packet From Client Num : " << c_id << endl;

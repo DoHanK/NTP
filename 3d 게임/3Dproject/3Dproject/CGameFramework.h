@@ -95,17 +95,18 @@ private:
 	std::array<std::array<std::deque<XMFLOAT3>,BULLETS>, MAX_USER> BulletsPosStore;
 	std::array<std::array<int,BULLETS>, MAX_USER> m_EachbulletSinkTick;
 	SOCKET m_ServerSocket;
-	bool	m_bInterporation = true;
+	bool	m_bInterporation = false;
 	int		m_myid;
 	char	m_SendBuffer[BUF_SIZE];																												// SendBuffer
 	int		sendLen;																													
 	char	m_RecvBuffer[BUF_SIZE];																												// RecvBuffer
-	int		recvLen = 0;
-	char	m_RemainBuffer[BUF_SIZE * 100];
-	char	m_BarrierBuffer[BUF_SIZE * 100];
 	int		remainLen = 0;
 	int		now_packet_size = 0;
 	char	KeyInputBuffer[NameBufferSize];
+	int		recvLen = 0;
+	char	m_RemainBuffer[BUF_SIZE * 100];
+	char	m_BarrierBuffer[BUF_SIZE * 100];
+
 public:
 	CGameFrameWork();
 	~CGameFrameWork();

@@ -7,9 +7,10 @@
 #define FRAME_BUFFER_HEIGHT		700
 
 //1초 30번
-#define SERVERTICK 1.f/5.f 
-#define SERVERANIMATIONTICK 10.f
+#define SERVERTICK 1.f/60.f 
+#define SERVERANIMATIONTICK 1.f
 
+ 
 //선형 보간 기능
 //#define SERVERTICK 1.f/5.f 
 //#define SERVERANIMATIONTICK 10.f

@@ -971,24 +971,26 @@ void CGameFrameWork::FrameAdvance() {
 			SendPlayerInfoInPlaying();
 
 			SendBulletInfoInPlaying();
-
 			ServerFrameRate = 0;
 		}
 
 	}
 
-
+	OutputDebugStringA("서버 시작 \n");
 	//서버 받는 곳
 	if (m_conneted) {
 		while (true) {
+
 			int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
 			if (::WSAGetLastError() == WSAEWOULDBLOCK) {
 				break;
 			}
 			char* ptr = m_RecvBuffer;
 			while (recvLen != 0) {
+
 				if (0 == now_packet_size) now_packet_size = (MAKEWORD(ptr[0], ptr[1]));
-				if (recvLen + remainLen >= now_packet_size) {
+			
+				if (recvLen + remainLen >= now_packet_size && now_packet_size !=0) {
 					memcpy(m_RemainBuffer + remainLen, ptr, now_packet_size - remainLen);
 					process_packet(m_RemainBuffer);
 					ptr += now_packet_size - remainLen;
@@ -1000,11 +1002,12 @@ void CGameFrameWork::FrameAdvance() {
 					memcpy(m_RemainBuffer + remainLen, ptr, recvLen);
 					remainLen += recvLen;
 					recvLen = 0;
+				
 				}
 			}
 		}
 	}
-
+	OutputDebugStringA("서버 끝 \n");
 	
 	if (m_GameState == PlayStage)
 	{
@@ -1728,8 +1731,12 @@ void CGameFrameWork::SendBulletInfoInPlaying()
 		}
 		
 	}
+
 	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
-	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+	send(m_ServerSocket, m_SendBuffer, p.size, 0);
+	
+
+	 //위치 상태 전송
 
 }
 
