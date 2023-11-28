@@ -89,7 +89,11 @@ private:
 	std::array<SESSION,MAX_USER> m_OtherPlayer;																									// 통신 받은 다른 플레이어
 	std::array<SESSION,MAX_USER> m_PreOtherPlayer;						//과거 정보 담기			
 																		// 통신 받은 다른 플레이어
-	std::array<int,MAX_USER> m_EachSinkTick;							//과거 정보 담기																		// 통신 받은 다른 플레이어
+	std::array<int,MAX_USER> m_EachSinkTick;							//과거 정보 담기	
+	// 통신 받은 다른 플레이어
+
+	std::array<std::array<std::deque<XMFLOAT3>,BULLETS>, MAX_USER> BulletsPosStore;
+	std::array<std::array<int,BULLETS>, MAX_USER> m_EachbulletSinkTick;
 	SOCKET m_ServerSocket;
 	bool	m_bInterporation = true;
 	int		m_myid;

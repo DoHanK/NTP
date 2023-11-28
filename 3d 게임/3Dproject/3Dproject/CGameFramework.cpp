@@ -51,6 +51,9 @@ CGameFrameWork::CGameFrameWork() {
 	}
 	for (int id = 0; id <MAX_USER; ++id) {
 		m_EachSinkTick[id] = 0;
+		for (int i = 0; i < BULLETS; ++i) {
+			m_EachbulletSinkTick[id][i] = 0;
+		}
 	}
 }
 CGameFrameWork::~CGameFrameWork() {
@@ -548,6 +551,9 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				}
 				for (int id = 0; id < MAX_USER; ++id) {
 					UserPosStore[id].clear();
+					for (int i = 0; i < BULLETS; ++i) {
+						BulletsPosStore[id][i].clear();
+					}
 				}
 				m_bInterporation = true;
 				OutputDebugStringA("선형보간 ㅇ");
@@ -677,7 +683,12 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 										m_pScene->AllMines[id][i].m_bActive = false;
 									}
 								}
-
+								for (int id = 0; id < MAX_USER; ++id) {
+									UserPosStore[id].clear();
+									for (int i = 0; i < BULLETS; ++i) {
+										BulletsPosStore[id][i].clear();
+									}
+								}
 								
 								
 
@@ -1003,6 +1014,7 @@ void CGameFrameWork::FrameAdvance() {
 	
 		if (m_bInterporation) {
 			//탱크 interporation	
+			m_pScene->ComputeInterpolationBullet(m_EachbulletSinkTick, BulletsPosStore);
 			m_pScene->InterporationTank(m_EachSinkTick, UserPosStore, m_OtherPlayer);
 			
 		}	
@@ -1968,6 +1980,9 @@ void CGameFrameWork::process_packet(char* packet)								//패킷 처리함수
 				if (!m_bInterporation) { //2frame에 한번식 받으면 굳이 안해줌
 					m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
 					m_EachSinkTick[p->id] = 0;
+					for (int i = 0; i < BULLETS; ++i) {
+						m_EachbulletSinkTick[p->id][i] = 0;
+					}
 				}
 
 
@@ -2032,7 +2047,27 @@ void CGameFrameWork::process_packet(char* packet)								//패킷 처리함수
 
 			}
 			else {
-				m_pScene->RefleshBullet(p);
+
+				if(m_bInterporation){
+						m_pScene->InitInterpolationBullet(p);
+					
+					for (int i = 0; i < BULLETS; ++i) {
+
+						if (p->in_use_bullets[i]) {
+							BulletsPosStore[p->id][i].push_back(p->bullets_pos[i]);
+
+						}
+						else {
+							//총알 유효하지않으면 총알 위치 비워줌 
+							BulletsPosStore[p->id][i].clear();
+						}
+					}
+
+				}
+				else {
+
+					m_pScene->RefleshBullet(p);
+				}
 			}
 		}
 
