@@ -1773,12 +1773,13 @@ void CGameFrameWork::SendHitMInes()
 
 			if (m_pPlayer->m_pMine != NULL) {
 
-				if (m_pPlayer->m_pMine[i]) {
+				if (m_pPlayer->m_pMine[i]->m_bActive) {
 
 					for (int id = 0; id < MAX_USER; ++id) {
+					
 
 						if (m_pScene->CTankObjects[id]->m_bActive) {
-							if (m_pScene->CTankObjects[id]->m_BoundingBox.Intersects(m_pPlayer->m_pMine[i]->m_BoundingBox) || m_pScene->CTankObjects[id]->TopBoundingBox.Intersects(m_pPlayer->m_pMine[i]->m_BoundingBox)) {
+							if (m_pScene->CTankObjects[id]->m_BoundingBox.Intersects(m_pPlayer->m_pMine[i]->m_BoundingBox)) {
 
 								m_pPlayer->m_pMine[i]->m_bActive = false;
 

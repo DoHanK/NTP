@@ -75,7 +75,9 @@ void CGameObject::UpdateBoundingBox()
 {
 	if (m_pMesh)
 	{
+
 		m_pMesh->m_pMesh->m_xmBoundingBox.Transform(m_BoundingBox, XMLoadFloat4x4(&m_xmf4x4World));
+		XMStoreFloat4(&m_BoundingBox.Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_BoundingBox.Orientation)));
 	}
 }
 //각 메쉬들의 행렬 정보 저장
@@ -385,7 +387,8 @@ void CTank::FindFrameSet()
 void CTank::UpdateBoundingBox()
 {
 	if (m_pMesh) {
-		m_pMesh->m_pMesh->m_xmBoundingBox.Transform(m_BoundingBox, XMLoadFloat4x4(&m_xmf4x4World));
+
+		m_pMesh->m_pMesh->m_xmBoundingBox.Transform(m_BoundingBox, XMLoadFloat4x4(&BottomTransform));
 		XMStoreFloat4(&m_BoundingBox.Orientation, XMQuaternionNormalize(XMLoadFloat4(&m_BoundingBox.Orientation)));
 		XMFLOAT4X4 temp = Matrix4x4::Multiply(TopTransform,m_xmf4x4World);
 
@@ -409,6 +412,7 @@ void CTank::UpdateAllTansform()
 	WheelMesh[1]->m_xmf4x4World = Matrix4x4::Multiply(*wheel[1], BottomMesh->m_xmf4x4World);
 	WheelMesh[2]->m_xmf4x4World = Matrix4x4::Multiply(*wheel[2], BottomMesh->m_xmf4x4World);
 	WheelMesh[3]->m_xmf4x4World = Matrix4x4::Multiply(*wheel[3], BottomMesh->m_xmf4x4World);
+
 	TopMesh->m_xmf4x4World = Matrix4x4::Multiply(*Top, TopTransform);
 	GunMesh->m_xmf4x4World = Matrix4x4::Multiply(*Gun, TopMesh->m_xmf4x4World);
 }

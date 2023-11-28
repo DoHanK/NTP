@@ -324,9 +324,10 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 	for (int i = 0; i < MAX_USER; ++i) {
 
 		for (int j = 0; j < MINES; ++j) {
-			AllMines[i][j].m_pMesh = m_MeshManager->BringMesh("Models/Mine.bin");
+			AllMines[i][j].SetMesh(m_MeshManager->BringMesh("Models/Mine.bin"));
 			AllMines[i][i].m_TextureAddr = m_MeshManager->BringTexture("Texture/ElementBlue.dds");
 			AllMines[i][j].m_bActive = false;
+			AllMines[i][j].m_pMesh->m_pMesh->m_xmBoundingBox.Extents.y += 1.0f;
 		}
 	}
 }
@@ -625,6 +626,7 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamrea
 
 	for (int id = 0; id < MAX_USER; ++id) {
 		for (int i = 0; i < MINES; ++i) {
+
 			if (AllMines[id][i].m_bActive) {
 				AllMines[id][i].UpdateAllTansform();
 				AllMines[id][i].Render(pd3dCommandList, pCamrea);
@@ -706,6 +708,16 @@ void CScene::RenderBoundingBox(ID3D12GraphicsCommandList* pd3dCommandList, CCame
 		if (m_pPlayer->m_pMine[i]->m_bActive) {
 			m_pPlayer->m_pMine[i]->UpdateAllTansform();
 			m_pPlayer->m_pMine[i]->RenderBoundingBox(pd3dCommandList, pCamera);
+		}
+	}
+
+	for (int id = 0; id < MAX_USER; ++id) {
+
+		for (int i = 0; i < MINES; ++i) {
+			if (AllMines[id][i].m_bActive) {
+				AllMines[id][i].UpdateAllTansform();
+				AllMines[id][i].RenderBoundingBox(pd3dCommandList, pCamera);
+			}
 		}
 	}
 
@@ -906,6 +918,7 @@ void CScene::InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<
 			TempMatrix._31 = LookVector.x;
 			TempMatrix._32 = LookVector.y;
 			TempMatrix._33 = LookVector.z;
+
 			CTankObjects[now.id]->BottomTransform = TempMatrix;
 
 			XMFLOAT3 SubtractPos = Vector3::Subtract(now.status.pos, pre.status.pos);
@@ -1083,8 +1096,8 @@ void CScene::UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id) {
 		TempMatrix._31 = LookVector.x;
 		TempMatrix._32 = LookVector.y;
 		TempMatrix._33 = LookVector.z;
-		CTankObjects[Players[id].id]->BottomTransform = TempMatrix;
 
+		CTankObjects[Players[id].id]->BottomTransform = TempMatrix;
 
 
 		CTankObjects[Players[id].id]->SetPosition(Players[id].status.get_pos());
@@ -1167,7 +1180,10 @@ void CScene::RefleshBullet(void* packet)
 
 
 			AllMines[p->id][i].m_bActive = true;
-
+			AllMines[p->id][i].UpdateBoundingBox();
+		}
+		else {
+			AllMines[p->id][i].m_bActive = false;
 		}
 	}
 
