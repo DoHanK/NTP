@@ -643,7 +643,7 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 								if (m_pPlayer) {
 									//플레이어 초기화
 									m_pPlayer->m_bActive = true;
-									
+									m_pPlayer->UseMine = 0;
 					
 								}
 								for (auto& m : m_pScene->m_BillBoardList) {
