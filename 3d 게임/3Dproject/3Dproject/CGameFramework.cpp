@@ -976,7 +976,7 @@ void CGameFrameWork::FrameAdvance() {
 
 	}
 
-	OutputDebugStringA("서버 시작 \n");
+	//OutputDebugStringA("서버 시작 \n");
 	//서버 받는 곳
 	if (m_conneted) {
 		while (true) {
@@ -984,42 +984,41 @@ void CGameFrameWork::FrameAdvance() {
 			if (::WSAGetLastError() == WSAEWOULDBLOCK) {
 				break;
 			}
-			char* ptr = m_RecvBuffer;
+
 			if (recvLen < 0)		// 서버에서 오류가 났을경우
 				exit(0);
-			while (recvLen > 0) {
 
-				if (0 == now_packet_size) {
-					if (remainLen == 1) {
-						memcpy(m_RemainBuffer + remainLen, ptr, 1);
-						ptr += 1;
-						remainLen = 2;
-						recvLen -= 1;
-						now_packet_size = MAKEWORD(m_RemainBuffer[0], m_RemainBuffer[1]);
+			char* ptr = m_RecvBuffer;
+			if (remainLen == 1) {
+				memcpy(m_RemainBuffer + 1, ptr, 1);
+				ptr += 1;
+				remainLen = 2;
+				recvLen -= 1;
+				now_packet_size = MAKEWORD(m_RemainBuffer[0], m_RemainBuffer[1]);
+			}
+			while (recvLen > 0){
+				if (now_packet_size == 0)
+					if (recvLen >= 2)
+						now_packet_size = MAKEWORD(ptr[0], ptr[1]);
+				if (now_packet_size > 0) {
+					if (now_packet_size <= recvLen + remainLen) {
+						memcpy(m_RemainBuffer + remainLen, ptr, now_packet_size - remainLen);
+						process_packet(m_RemainBuffer);
+						ptr += (now_packet_size - remainLen);
+						recvLen -= (now_packet_size - remainLen);
+						now_packet_size = 0;
+						remainLen = 0;
 					}
-					else {
-						if (recvLen >= 2)
-							now_packet_size = (MAKEWORD(ptr[0], ptr[1]));
-					}
-				}
-					
-				if ((recvLen + remainLen >= now_packet_size) && (now_packet_size !=0)) {
-					memcpy(m_RemainBuffer + remainLen, ptr, now_packet_size - remainLen);
-					process_packet(m_RemainBuffer);
-					ptr += (now_packet_size - remainLen);
-					recvLen -= (now_packet_size - remainLen);
-					now_packet_size = 0;
-					remainLen = 0;
 				}
 				else {
-					memcpy(m_RemainBuffer + remainLen, ptr, recvLen);
+					memcpy(m_RemainBuffer, ptr, recvLen);
 					remainLen += recvLen;
 					recvLen = 0;
 				}
 			}
 		}
 	}
-	OutputDebugStringA("서버 끝 \n");
+	//OutputDebugStringA("서버 끝 \n");
 	
 	if (m_GameState == PlayStage)
 	{

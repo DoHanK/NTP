@@ -143,32 +143,29 @@ public:
 		}
 
 		char* ptr = recvBuffer;
-
+		if (remainLen == 1) {
+			memcpy(remainBuffer + 1, ptr, 1);
+			ptr += 1;
+			remainLen = 2;
+			recvLen -= 1;
+			nowPacketSize = MAKEWORD(remainBuffer[0], remainBuffer[1]);
+		}
 		while (recvLen > 0) {
-			if (0 == nowPacketSize) {
-				if (remainLen == 1) {
-					memcpy(remainBuffer + remainLen, ptr, 1);
-					ptr += 1;
-					remainLen = 2;
-					recvLen -= 1;
-					nowPacketSize = MAKEWORD(remainBuffer[0], remainBuffer[1]);
+			if (nowPacketSize == 0)
+				if (recvLen >= 2)
+					nowPacketSize = MAKEWORD(ptr[0], ptr[1]);
+			if (nowPacketSize > 0) {
+				if (nowPacketSize <= recvLen + remainLen) {
+					memcpy(remainBuffer + remainLen, ptr, nowPacketSize - remainLen);
+					process_packet(id,remainBuffer);
+					ptr += (nowPacketSize - remainLen);
+					recvLen -= (nowPacketSize - remainLen);
+					nowPacketSize = 0;
+					remainLen = 0;
 				}
-				else {
-					if (recvLen >= 2)
-						nowPacketSize = (MAKEWORD(ptr[0], ptr[1]));
-				}
-			}
-
-			if ((recvLen + remainLen >= nowPacketSize) && (nowPacketSize != 0)) {
-				memcpy(remainBuffer + remainLen, ptr, nowPacketSize - remainLen);
-				process_packet(id,remainBuffer);
-				ptr += (nowPacketSize - remainLen);
-				recvLen -= (nowPacketSize - remainLen);
-				nowPacketSize = 0;
-				remainLen = 0;
 			}
 			else {
-				memcpy(remainBuffer + remainLen, ptr, recvLen);
+				memcpy(remainBuffer, ptr, recvLen);
 				remainLen += recvLen;
 				recvLen = 0;
 			}
@@ -177,8 +174,7 @@ public:
 
 	void do_send(void* packet)																																// 데이터 송신
 	{
-		sendLen = int(MAKEWORD(reinterpret_cast<char*>(packet)[0], reinterpret_cast<char*>(packet)[1]));
-		memcpy(sendBuffer, reinterpret_cast<char*>(packet),sendLen);
+		memcpy(sendBuffer, packet,sendLen);
 		sendLen = send(socket, sendBuffer, sendLen, 0);
 		if (sendLen == SOCKET_ERROR) {
 			int errCode = ::WSAGetLastError();
@@ -220,10 +216,12 @@ void SESSION::send_ready_packet(int c_id)
 	p.type = SC_READY;
 	p.id = c_id;
 	p.ready = clients[c_id].ready;
+	sendLen = p.size;
 	do_send(&p);
 }
 void SESSION::send_enter_room_packet(int c_id)
 {
+	cout << id << " 에게 " << c_id << "의 입장정보 전송" << endl;
 	SC_ENTER_ROOM_PACKET p;
 	p.size = sizeof(SC_ENTER_ROOM_PACKET);
 	p.type = SC_ENTER_ROOM;
@@ -232,6 +230,7 @@ void SESSION::send_enter_room_packet(int c_id)
 	p.color = clients[c_id].color;
 	p.pos_num = clients[c_id].pos_num;
 	p.ready = clients[c_id].ready;
+	sendLen = p.size;
 	do_send(&p);
 }
 
@@ -241,6 +240,7 @@ void SESSION::send_exit_room_packet(int c_id)
 	p.size = sizeof(SC_EXIT_ROOM_PACKET);
 	p.type = SC_EXIT_ROOM;
 	p.id = c_id;
+	sendLen = p.size;
 	do_send(&p);
 }
 
@@ -255,6 +255,7 @@ void SESSION::send_add_player_packet(int c_id)
 	p.pos = Poses[c_id];
 	p.top_dir = Default_Pos;
 	p.bottom_dir = Default_Pos;
+	sendLen = p.size;
 	do_send(&p);
 }
 
@@ -267,6 +268,7 @@ void SESSION::send_move_packet(int c_id)
 	p.pos = clients[c_id].status.get_pos();
 	p.top_dir = clients[c_id].status.get_top_dir();
 	p.bottom_dir = clients[c_id].status.get_bottom_dir();
+	sendLen = p.size;
 	do_send(&p);
 }
 
@@ -275,6 +277,7 @@ void SESSION::send_game_start_packet()
 	SC_GAME_START_PACKET p;
 	p.size = sizeof(SC_GAME_START_PACKET);
 	p.type = SC_GAME_START;
+	sendLen = p.size;
 	do_send(&p);
 }
 
@@ -283,6 +286,7 @@ void SESSION::send_remove_player_packet(int c_id)
 	SC_REMOVE_PLAYER_PACKET p;
 	p.size = sizeof(SC_REMOVE_PLAYER_PACKET);
 	p.type = SC_REMOVE_PLAYER;
+	sendLen = p.size;
 	p.id = c_id;
 	do_send(&p);
 }
@@ -309,6 +313,7 @@ void SESSION::send_bullet_packet(int c_id)
 	else
 		memcpy(&p.in_use_mines, &default_mines, sizeof(default_mines));
 
+	sendLen = p.size;
 	do_send(&p);
 }
 
@@ -319,6 +324,7 @@ void SESSION::send_result_packet(int c_id, int rank)
 	p.type = SC_RESULT;
 	p.id = c_id;
 	p.rank = rank;
+	sendLen = p.size;
 	do_send(&p);
 }
 
@@ -329,6 +335,7 @@ void SESSION::send_hitted_packet(int c_id)
 	p.type = SC_HITTED;
 	p.id = c_id;
 	p.hp = clients[c_id].status.get_hp();
+	sendLen = p.size;
 	do_send(&p);
 }
 
@@ -368,22 +375,23 @@ void process_packet(int c_id, char* packet)
 
 		clients[c_id].color = p->color;
 		clients[c_id].stage = ST_READY_ROOM;
-		clients[c_id].status.change_pos({ 0.f,0.f,0.f });
+		/*clients[c_id].status.change_pos({ 0.f,0.f,0.f });
 		clients[c_id].status.change_top_dir({ 0.f,0.f,0.f });
-		clients[c_id].status.change_bottom_dir({ 0.f,0.f,0.f });
+		clients[c_id].status.change_bottom_dir({ 0.f,0.f,0.f });*/
 
 		for (auto& pl : clients) {
 			if (pl.stage != ST_READY_ROOM)
 				continue;
-			/*if (pl.id == c_id)
-				continue;*/
 			pl.send_enter_room_packet(c_id);
+			if (c_id == pl.id)
+				continue;
 			clients[c_id].send_enter_room_packet(pl.id);
-
 		}
 		break;
 	}
 	case CS_READY: {
+		std::cout << "Recv ready Packet From Client Num : " << c_id << endl;
+
 		if (clients[c_id].ready)
 			clients[c_id].ready = false;
 		else
@@ -444,6 +452,8 @@ void process_packet(int c_id, char* packet)
 	}
 
 	case CS_EXIT_ROOM: {
+		std::cout << "exit Room Packet From Client Num : " << c_id << endl;
+
 		if (clients[c_id].stage != ST_READY_ROOM)
 			break;
 		CS_EXIT_ROOM_PACKET* p = reinterpret_cast<CS_EXIT_ROOM_PACKET*>(packet);
