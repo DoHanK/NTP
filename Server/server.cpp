@@ -34,6 +34,8 @@ XMFLOAT3 Default_Pos{0,0,0};
 
 enum STAGE { ST_OFFLINE, ST_LOGIN, ST_READY_ROOM, ST_INGAME };
 
+array<bool, MAX_BULLETS> default_bullets;
+array<bool, MAX_MINES> default_mines;
 
 class Status {
 private:
@@ -133,6 +135,7 @@ public:
 			error = true;
 			m.lock();
 			Room[pos_num] = -1;
+
 			m.unlock();
 
 			status.change_hp(0);
@@ -291,10 +294,20 @@ void SESSION::send_bullet_packet(int c_id)
 	p.type = SC_BULLET;
 	p.id = c_id;
 	memcpy(&p.bullets_pos,&clients[c_id].status.bullets_pos, sizeof(clients[c_id].status.bullets_pos));
+
 	memcpy(&p.bullets_dir,&clients[c_id].status.bullets_dir, sizeof(clients[c_id].status.bullets_dir));
-	memcpy(&p.in_use_bullets,&clients[c_id].status.in_use_bullets, sizeof(clients[c_id].status.in_use_bullets));
+
+	if(clients[c_id].status.get_hp() > 0)
+		memcpy(&p.in_use_bullets,&clients[c_id].status.in_use_bullets, sizeof(clients[c_id].status.in_use_bullets));
+	else
+		memcpy(&p.in_use_bullets, &default_bullets, sizeof(default_bullets));
+
 	memcpy(&p.mines_pos, &clients[c_id].status.mines_pos, sizeof(clients[c_id].status.mines_pos));
-	memcpy(&p.in_use_mines, &clients[c_id].status.in_use_mines, sizeof(clients[c_id].status.in_use_mines));
+
+	if (clients[c_id].status.get_hp() > 0)
+		memcpy(&p.in_use_mines, &clients[c_id].status.in_use_mines, sizeof(clients[c_id].status.in_use_mines));
+	else
+		memcpy(&p.in_use_mines, &default_mines, sizeof(default_mines));
 
 	do_send(&p);
 }
@@ -516,8 +529,12 @@ void process_packet(int c_id, char* packet)
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
-			if (clients[p->id].status.get_hp() <= 0)
+			if (pl.id == c_id)
+				continue;
+			if (clients[p->id].status.get_hp() <= 0){
 				pl.send_remove_player_packet(p->id);
+				pl.send_bullet_packet(p->id);
+			}
 			else
 				pl.send_hitted_packet(p->id);
 
@@ -562,11 +579,13 @@ void process_packet(int c_id, char* packet)
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
-			if (clients[p->id].status.get_hp() <= 0)
+			if (clients[p->id].status.get_hp() <= 0){
 				pl.send_remove_player_packet(p->id);
+				if(pl.id != p->id)
+					pl.send_bullet_packet(p->id);
+			}
 			else
 				pl.send_hitted_packet(p->id);
-
 		}
 
 		if (clients[p->id].status.get_hp() <= 0) {
@@ -684,8 +703,13 @@ void InitPos()
 	Poses[7].y = 2;
 	Poses[7].z = 282.4;
 
-	
+	for (int i = 0; i < MAX_BULLETS; ++i) {
+		default_bullets[i] = false;
+	}
 
+	for (int i = 0; i < MAX_MINES; ++i) {
+		default_mines[i] = false;
+	}
 }
 
 int main(int argc, char* argv[])

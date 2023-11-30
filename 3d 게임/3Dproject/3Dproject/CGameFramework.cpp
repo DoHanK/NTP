@@ -980,7 +980,6 @@ void CGameFrameWork::FrameAdvance() {
 	//서버 받는 곳
 	if (m_conneted) {
 		while (true) {
-
 			int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, BUF_SIZE, 0);
 			if (::WSAGetLastError() == WSAEWOULDBLOCK) {
 				break;
@@ -1004,8 +1003,6 @@ void CGameFrameWork::FrameAdvance() {
 					}
 				}
 					
-					
-			
 				if ((recvLen + remainLen >= now_packet_size) && (now_packet_size !=0)) {
 					memcpy(m_RemainBuffer + remainLen, ptr, now_packet_size - remainLen);
 					process_packet(m_RemainBuffer);
@@ -1019,8 +1016,6 @@ void CGameFrameWork::FrameAdvance() {
 					remainLen += recvLen;
 					recvLen = 0;
 				}
-
-				
 			}
 		}
 	}
@@ -1627,6 +1622,7 @@ int CGameFrameWork::InitSocket() {
 
 	recvLen = 0;
 	memset(m_RecvBuffer, 0, sizeof(m_RecvBuffer));
+	memset(m_RemainBuffer, 0, sizeof(m_RemainBuffer));
 	//retval = connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
 	//if (retval) {
 	//	TCHAR temp[256];
