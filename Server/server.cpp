@@ -163,6 +163,11 @@ public:
 					nowPacketSize = 0;
 					remainLen = 0;
 				}
+				else {
+					memcpy(remainBuffer, ptr, recvLen);
+					remainLen += recvLen;
+					recvLen = 0;
+				}
 			}
 			else {
 				memcpy(remainBuffer, ptr, recvLen);

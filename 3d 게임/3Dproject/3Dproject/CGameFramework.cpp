@@ -1009,6 +1009,11 @@ void CGameFrameWork::FrameAdvance() {
 						now_packet_size = 0;
 						remainLen = 0;
 					}
+					else {
+						memcpy(m_RemainBuffer, ptr, recvLen);
+						remainLen += recvLen;
+						recvLen = 0;
+					}
 				}
 				else {
 					memcpy(m_RemainBuffer, ptr, recvLen);
