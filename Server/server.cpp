@@ -100,7 +100,7 @@ public:
 	int				pos_num;
 	char			remainBuffer[BUF_SIZE*2];
 	int				remainLen;
-	int				prev_remain;
+	int				nowPacketSize;
 	STAGE			stage;
 public:
 	SESSION() : socket(0)
@@ -111,7 +111,7 @@ public:
 		status.change_bottom_dir({ 0.f, 1.f, 0.f });
 		status.change_hp(100);
 		remainLen = 0;
-		prev_remain = 0;
+		nowPacketSize = 0;
 		ready = false;
 		memset(remainBuffer, 0, sizeof(remainBuffer));
 		for (int i = 0; i < 30; ++i) {
@@ -138,22 +138,37 @@ public:
 			status.change_hp(0);
 			return;
 		}
-		
-		memcpy(remainBuffer + remainLen, recvBuffer, recvLen);
-		int remain_data = recvLen + remainLen;
-		char* p = remainBuffer;
-		while (remain_data > 0) {
-			int packet_size = MAKEWORD(p[0], p[1]);;
-			if (packet_size <= remain_data) {
-				process_packet(id, p);
-				p = p + packet_size;
-				remain_data = remain_data - packet_size;
+
+		char* ptr = recvBuffer;
+
+		while (recvLen > 0) {
+			if (0 == nowPacketSize) {
+				if (remainLen == 1) {
+					memcpy(remainBuffer + remainLen, ptr, 1);
+					ptr += 1;
+					remainLen = 2;
+					recvLen -= 1;
+					nowPacketSize = MAKEWORD(remainBuffer[0], remainBuffer[1]);
+				}
+				else {
+					if (recvLen >= 2)
+						nowPacketSize = (MAKEWORD(ptr[0], ptr[1]));
+				}
 			}
-			else break;
-		}
-		remainLen = remain_data;
-		if (remain_data > 0) {
-			memcpy(remainBuffer, p, remain_data);
+
+			if ((recvLen + remainLen >= nowPacketSize) && (nowPacketSize != 0)) {
+				memcpy(remainBuffer + remainLen, ptr, nowPacketSize - remainLen);
+				process_packet(id,remainBuffer);
+				ptr += (nowPacketSize - remainLen);
+				recvLen -= (nowPacketSize - remainLen);
+				nowPacketSize = 0;
+				remainLen = 0;
+			}
+			else {
+				memcpy(remainBuffer + remainLen, ptr, recvLen);
+				remainLen += recvLen;
+				recvLen = 0;
+			}
 		}
 	}
 

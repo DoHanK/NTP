@@ -104,8 +104,7 @@ private:
 	int		now_packet_size = 0;
 	char	KeyInputBuffer[NameBufferSize];
 	int		recvLen = 0;
-	char	m_RemainBuffer[BUF_SIZE * 100];
-	char	m_BarrierBuffer[BUF_SIZE * 100];
+	char	m_RemainBuffer[BUF_SIZE * 2];
 
 public:
 	CGameFrameWork();
