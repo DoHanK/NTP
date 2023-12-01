@@ -372,6 +372,7 @@ void process_packet(int c_id, char* packet)
 		clients[c_id].status.change_top_dir({ 0.f,0.f,0.f });
 		clients[c_id].status.change_bottom_dir({ 0.f,0.f,0.f });
 
+		m.lock();
 		for (auto& pl : clients) {
 			if (pl.stage != ST_READY_ROOM)
 				continue;
@@ -381,6 +382,7 @@ void process_packet(int c_id, char* packet)
 			clients[c_id].send_enter_room_packet(pl.id);
 
 		}
+		m.unlock();
 		break;
 	}
 	case CS_READY: {
@@ -393,13 +395,13 @@ void process_packet(int c_id, char* packet)
 			break;
 		//std::cout << "레디 패킷 전송" << std::endl;
 
+		m.lock();
 		for (auto& pl : clients) {
 			if (pl.stage != ST_READY_ROOM)
 				continue;
 			pl.send_ready_packet(c_id);
 		}
 
-		m.lock();
 		for (int i = 0; i < Room.size(); ++i) {
 			if (Room[i] == -1) {
 				m.unlock();
@@ -451,12 +453,13 @@ void process_packet(int c_id, char* packet)
 		m.lock();
 		Room[clients[c_id].pos_num] = -1;
 		clients[c_id].stage = ST_LOGIN;
-		m.unlock();
+		
 		for (auto& pl : clients) {
 			if (pl.stage != ST_READY_ROOM)
 				continue;
 			pl.send_exit_room_packet(c_id);
 		}
+		m.unlock();
 		break;
 	}
 	case CS_MOVE: {
@@ -470,6 +473,7 @@ void process_packet(int c_id, char* packet)
 		clients[c_id].status.change_top_dir(p->top_dir);
 		clients[c_id].status.change_bottom_dir(p->bottom_dir);
 
+		m.lock();
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
@@ -477,6 +481,7 @@ void process_packet(int c_id, char* packet)
 				continue;
 			pl.send_move_packet(c_id);
 		}
+		m.unlock();
 
 		if (Rank == 1) {
 			clients[c_id].stage = ST_LOGIN;
@@ -504,6 +509,7 @@ void process_packet(int c_id, char* packet)
 		memcpy(&clients[c_id].status.mines_pos, &p->mines_pos, sizeof(p->mines_pos));
 		memcpy(&clients[c_id].status.in_use_mines, &p->in_use_mines, sizeof(p->in_use_mines));
 
+		m.lock();
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
@@ -511,6 +517,7 @@ void process_packet(int c_id, char* packet)
 				continue;
 			pl.send_bullet_packet(c_id);
 		}
+		m.unlock();
 		break;
 	}
 
