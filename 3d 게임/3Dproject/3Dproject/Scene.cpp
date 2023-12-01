@@ -324,9 +324,10 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 	for (int i = 0; i < MAX_USER; ++i) {
 
 		for (int j = 0; j < MINES; ++j) {
-			AllMines[i][j].m_pMesh = m_MeshManager->BringMesh("Models/Mine.bin");
+			AllMines[i][j].SetMesh(m_MeshManager->BringMesh("Models/Mine.bin"));
 			AllMines[i][i].m_TextureAddr = m_MeshManager->BringTexture("Texture/ElementBlue.dds");
 			AllMines[i][j].m_bActive = false;
+			AllMines[i][j].m_pMesh->m_pMesh->m_xmBoundingBox.Extents.y += 1.0f;
 		}
 	}
 }
@@ -625,6 +626,7 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamrea
 
 	for (int id = 0; id < MAX_USER; ++id) {
 		for (int i = 0; i < MINES; ++i) {
+
 			if (AllMines[id][i].m_bActive) {
 				AllMines[id][i].UpdateAllTansform();
 				AllMines[id][i].Render(pd3dCommandList, pCamrea);
@@ -706,6 +708,16 @@ void CScene::RenderBoundingBox(ID3D12GraphicsCommandList* pd3dCommandList, CCame
 		if (m_pPlayer->m_pMine[i]->m_bActive) {
 			m_pPlayer->m_pMine[i]->UpdateAllTansform();
 			m_pPlayer->m_pMine[i]->RenderBoundingBox(pd3dCommandList, pCamera);
+		}
+	}
+
+	for (int id = 0; id < MAX_USER; ++id) {
+
+		for (int i = 0; i < MINES; ++i) {
+			if (AllMines[id][i].m_bActive) {
+				AllMines[id][i].UpdateAllTansform();
+				AllMines[id][i].RenderBoundingBox(pd3dCommandList, pCamera);
+			}
 		}
 	}
 
@@ -906,6 +918,7 @@ void CScene::InterporationTank(std::array<int, MAX_USER>& EveryTick, std::deque<
 			TempMatrix._31 = LookVector.x;
 			TempMatrix._32 = LookVector.y;
 			TempMatrix._33 = LookVector.z;
+
 			CTankObjects[now.id]->BottomTransform = TempMatrix;
 
 			XMFLOAT3 SubtractPos = Vector3::Subtract(now.status.pos, pre.status.pos);
@@ -1083,8 +1096,8 @@ void CScene::UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id) {
 		TempMatrix._31 = LookVector.x;
 		TempMatrix._32 = LookVector.y;
 		TempMatrix._33 = LookVector.z;
-		CTankObjects[Players[id].id]->BottomTransform = TempMatrix;
 
+		CTankObjects[Players[id].id]->BottomTransform = TempMatrix;
 
 
 		CTankObjects[Players[id].id]->SetPosition(Players[id].status.get_pos());
@@ -1167,8 +1180,179 @@ void CScene::RefleshBullet(void* packet)
 
 
 			AllMines[p->id][i].m_bActive = true;
-
+			AllMines[p->id][i].UpdateBoundingBox();
+		}
+		else {
+			AllMines[p->id][i].m_bActive = false;
 		}
 	}
 
+}
+
+void CScene::InitInterpolationBullet(void* packet)
+{
+
+	SC_BULLET_PACKET* p = reinterpret_cast<SC_BULLET_PACKET*>(packet);
+
+
+
+	for (int i = 0; i < BULLETS; ++i) {
+
+		if (p->in_use_bullets[i]) {
+			
+			AllBullets[p->id][i].m_xmf4x4World._11 = -p->bullets_dir[i].x;
+			AllBullets[p->id][i].m_xmf4x4World._12 = -p->bullets_dir[i].y;
+			AllBullets[p->id][i].m_xmf4x4World._13 = -p->bullets_dir[i].z;
+			AllBullets[p->id][i].m_xmf4x4World._14 = 0;
+
+			AllBullets[p->id][i].m_xmf4x4World._21 = 0;
+			AllBullets[p->id][i].m_xmf4x4World._22 = 1.0f;
+			AllBullets[p->id][i].m_xmf4x4World._23 = 0;
+			AllBullets[p->id][i].m_xmf4x4World._24 = 0.0f;
+
+			XMFLOAT3 LookVector = Vector3::CrossProduct(p->bullets_dir[i], XMFLOAT3(0, 1, 0));
+			AllBullets[p->id][i].m_xmf4x4World._31 = LookVector.x;
+			AllBullets[p->id][i].m_xmf4x4World._32 = LookVector.y;
+			AllBullets[p->id][i].m_xmf4x4World._33 = LookVector.z;
+			AllBullets[p->id][i].m_xmf4x4World._34 = 0.0f;
+			AllBullets[p->id][i].m_xmf4x4World._44 = 1.0f;
+
+
+			AllBullets[p->id][i].SetMovingDirection(p->bullets_dir[i]);
+			AllBullets[p->id][i].SetActive(true);
+			//AllBullets[p->id][i].Animate(0.0f);
+
+
+		}
+		else {
+			AllBullets[p->id][i].SetActive(false);
+		}
+	}
+
+	for (int i = 0; i < MINES; ++i) {
+
+		if (p->in_use_mines[i]) {
+
+			AllMines[p->id][i].m_xmf4x4World._11 = 1.0f;
+			AllMines[p->id][i].m_xmf4x4World._12 = 0.0f;
+			AllMines[p->id][i].m_xmf4x4World._13 = 0.0f;
+			AllMines[p->id][i].m_xmf4x4World._14 = 0.0f;
+
+			AllMines[p->id][i].m_xmf4x4World._21 = 0.0f;
+			AllMines[p->id][i].m_xmf4x4World._22 = 1.0f;
+			AllMines[p->id][i].m_xmf4x4World._23 = 0.0f;
+			AllMines[p->id][i].m_xmf4x4World._24 = 0.0f;
+			XMFLOAT3 LookVector = Vector3::CrossProduct(XMFLOAT3(1, 0, 0), XMFLOAT3(0, 1, 0));
+			AllMines[p->id][i].m_xmf4x4World._31 = LookVector.x;
+			AllMines[p->id][i].m_xmf4x4World._32 = LookVector.y;
+			AllMines[p->id][i].m_xmf4x4World._33 = LookVector.z;
+			AllMines[p->id][i].m_xmf4x4World._34 = 0.0f;
+
+			AllMines[p->id][i].m_xmf4x4World._41 = p->mines_pos[i].x;
+			AllMines[p->id][i].m_xmf4x4World._42 = p->mines_pos[i].y;
+			AllMines[p->id][i].m_xmf4x4World._43 = p->mines_pos[i].z;
+			AllMines[p->id][i].m_xmf4x4World._44 = 1.0f;
+
+
+			AllMines[p->id][i].m_bActive = true;
+			AllMines[p->id][i].UpdateBoundingBox();
+		}
+		else {
+			AllMines[p->id][i].m_bActive = false;
+		}
+	}
+}
+
+void CScene::ComputeInterpolationBullet(std::array<std::array<int, BULLETS>,MAX_USER>& EveryTick, std::array<std::array<std::deque<XMFLOAT3>, BULLETS>, MAX_USER>& BulletsPosStore)
+{
+
+	for (int id = 0; id < MAX_USER; ++id) {
+
+		for (int i = 0; i < BULLETS; ++i) {
+		
+			if (AllBullets[id][i].m_bActive) {
+				if (BulletsPosStore[id][i].size() == 0) {
+					continue;
+				}
+				//총알 보간할게 있다면,
+				if (BulletsPosStore[id][i].size() > 1) {
+
+					float ftick = float(EveryTick[id][i]) / SERVERANIMATIONTICK;
+
+					if (EveryTick[id][i] >= SERVERANIMATIONTICK) {
+						if (id == 0 && i == 0)
+						OutputDebugStringA("초기화 \n");
+
+						BulletsPosStore[id][i].pop_front();
+						EveryTick[id][i] = 0;
+						continue;
+					}
+
+					XMFLOAT3 pre = BulletsPosStore[id][i][0];
+					XMFLOAT3 now = BulletsPosStore[id][i][1];
+
+					if (pre.x == now.x &&
+						pre.y == now.y &&
+						pre.z == now.z) {
+						AllBullets[id][i].m_xmf4x4World._41 = now.x;
+						AllBullets[id][i].m_xmf4x4World._42 = now.y;
+						AllBullets[id][i].m_xmf4x4World._43 = now.z;
+						BulletsPosStore[id][i].pop_front();
+						BulletsPosStore[id][i].pop_front();
+						EveryTick[id][i] = 0;
+						continue;
+					}
+
+					XMFLOAT3 interpos = Vector3::Add(pre, Vector3::ScalarProduct(Vector3::Subtract(now, pre), ftick, false));
+					AllBullets[id][i].m_xmf4x4World._41 = interpos.x;
+					AllBullets[id][i].m_xmf4x4World._42 = interpos.y;
+					AllBullets[id][i].m_xmf4x4World._43 = interpos.z;
+
+
+
+					if (id == 0 && i == 0) {
+						OutputDebugStringA(std::to_string(id).c_str());
+						OutputDebugStringA("의 ftick은	");
+						OutputDebugStringA(std::to_string(EveryTick[id][i]).c_str());
+						string temp = "     0번째 값 위치";
+						temp += std::to_string(pre.x) + " " + std::to_string(pre.y) + " " + std::to_string(pre.z);
+						temp += "    1번째 값 위치";
+						temp += std::to_string(now.x) + " " + std::to_string(now.y) + " " + std::to_string(now.z);
+
+						temp += "큐의 사이즈 " ;
+						temp += std::to_string(BulletsPosStore[id][i].size());
+						//string temp = "위쪽";
+						//temp += std::to_string(intertopDir.x) + " " + std::to_string(intertopDir.y) + " " + std::to_string(intertopDir.z);
+						//temp += "          아래";
+						//temp += std::to_string(interBottomDir.x) + " " + std::to_string(interBottomDir.y) + " " + std::to_string(interBottomDir.z);
+						temp += "          위치";
+						temp += std::to_string(interpos.x) + " " + std::to_string(interpos.y) + " " + std::to_string(interpos.z) + "\n";
+						OutputDebugStringA(temp.c_str());
+
+					}
+
+
+					AllBullets[id][i].SetPosition(interpos);
+					
+					AllBullets[id][i].UpdateBoundingBox();
+					EveryTick[id][i]++;
+				}
+				else {
+					XMFLOAT3 pre = BulletsPosStore[id][i][0];
+
+
+
+					AllBullets[id][i].m_xmf4x4World._41 = pre.x;
+					AllBullets[id][i].m_xmf4x4World._42 = pre.y;
+					AllBullets[id][i].m_xmf4x4World._43 = pre.z;
+					EveryTick[id][i] = 0;
+				}
+
+
+			}
+		}
+
+
+
+	}
 }

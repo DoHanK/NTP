@@ -129,6 +129,9 @@ class CScene
 	void UpdateOtherPlayer(std::array<SESSION, MAX_USER>& Players, int id);
 	void ReomvePlayer(int id);
 	void RefleshBullet(void* packet);
+	void InitInterpolationBullet(void* packet);
+
+	void ComputeInterpolationBullet(std::array<std::array<int, BULLETS>, MAX_USER>& EveryTick, std::array<std::array<std::deque<XMFLOAT3>, BULLETS>, MAX_USER>& BulletsPosStore);
 protected:
 //배치처리를 위한 씬을 세이더들의 리스트로 표현
 	CShader* m_pShaders = NULL;

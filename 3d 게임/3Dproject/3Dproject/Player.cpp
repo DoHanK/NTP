@@ -731,6 +731,7 @@ void CTanker::SetMine()
 	if (UseMine < MINES) {
 		m_pMine[UseMine]->m_bActive = true;
 		m_pMine[UseMine]->m_xmf4x4World = m_xmf4x4World;
+		m_pMine[UseMine]->UpdateBoundingBox();
 		m_pMine[UseMine++]->m_xmf4x4World._42 -= 1;
 	}
 }

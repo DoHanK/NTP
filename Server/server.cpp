@@ -34,6 +34,8 @@ XMFLOAT3 Default_Pos{0,0,0};
 
 enum STAGE { ST_OFFLINE, ST_LOGIN, ST_READY_ROOM, ST_INGAME };
 
+array<bool, MAX_BULLETS> default_bullets;
+array<bool, MAX_MINES> default_mines;
 
 class Status {
 private:
@@ -100,7 +102,7 @@ public:
 	int				pos_num;
 	char			remainBuffer[BUF_SIZE*2];
 	int				remainLen;
-	int				prev_remain;
+	int				nowPacketSize;
 	STAGE			stage;
 public:
 	SESSION() : socket(0)
@@ -111,7 +113,7 @@ public:
 		status.change_bottom_dir({ 0.f, 1.f, 0.f });
 		status.change_hp(100);
 		remainLen = 0;
-		prev_remain = 0;
+		nowPacketSize = 0;
 		ready = false;
 		memset(remainBuffer, 0, sizeof(remainBuffer));
 		for (int i = 0; i < 30; ++i) {
@@ -133,27 +135,43 @@ public:
 			error = true;
 			m.lock();
 			Room[pos_num] = -1;
+
 			m.unlock();
 
 			status.change_hp(0);
 			return;
 		}
-		
-		memcpy(remainBuffer + remainLen, recvBuffer, recvLen);
-		int remain_data = recvLen + remainLen;
-		char* p = remainBuffer;
-		while (remain_data > 0) {
-			int packet_size = MAKEWORD(p[0], p[1]);;
-			if (packet_size <= remain_data) {
-				process_packet(id, p);
-				p = p + packet_size;
-				remain_data = remain_data - packet_size;
+
+		char* ptr = recvBuffer;
+
+		while (recvLen > 0) {
+			if (0 == nowPacketSize) {
+				if (remainLen == 1) {
+					memcpy(remainBuffer + remainLen, ptr, 1);
+					ptr += 1;
+					remainLen = 2;
+					recvLen -= 1;
+					nowPacketSize = MAKEWORD(remainBuffer[0], remainBuffer[1]);
+				}
+				else {
+					if (recvLen >= 2)
+						nowPacketSize = (MAKEWORD(ptr[0], ptr[1]));
+				}
 			}
-			else break;
-		}
-		remainLen = remain_data;
-		if (remain_data > 0) {
-			memcpy(remainBuffer, p, remain_data);
+
+			if ((recvLen + remainLen >= nowPacketSize) && (nowPacketSize != 0)) {
+				memcpy(remainBuffer + remainLen, ptr, nowPacketSize - remainLen);
+				process_packet(id,remainBuffer);
+				ptr += (nowPacketSize - remainLen);
+				recvLen -= (nowPacketSize - remainLen);
+				nowPacketSize = 0;
+				remainLen = 0;
+			}
+			else {
+				memcpy(remainBuffer + remainLen, ptr, recvLen);
+				remainLen += recvLen;
+				recvLen = 0;
+			}
 		}
 	}
 
@@ -276,10 +294,20 @@ void SESSION::send_bullet_packet(int c_id)
 	p.type = SC_BULLET;
 	p.id = c_id;
 	memcpy(&p.bullets_pos,&clients[c_id].status.bullets_pos, sizeof(clients[c_id].status.bullets_pos));
+
 	memcpy(&p.bullets_dir,&clients[c_id].status.bullets_dir, sizeof(clients[c_id].status.bullets_dir));
-	memcpy(&p.in_use_bullets,&clients[c_id].status.in_use_bullets, sizeof(clients[c_id].status.in_use_bullets));
+
+	if(clients[c_id].status.get_hp() > 0)
+		memcpy(&p.in_use_bullets,&clients[c_id].status.in_use_bullets, sizeof(clients[c_id].status.in_use_bullets));
+	else
+		memcpy(&p.in_use_bullets, &default_bullets, sizeof(default_bullets));
+
 	memcpy(&p.mines_pos, &clients[c_id].status.mines_pos, sizeof(clients[c_id].status.mines_pos));
-	memcpy(&p.in_use_mines, &clients[c_id].status.in_use_mines, sizeof(clients[c_id].status.in_use_mines));
+
+	if (clients[c_id].status.get_hp() > 0)
+		memcpy(&p.in_use_mines, &clients[c_id].status.in_use_mines, sizeof(clients[c_id].status.in_use_mines));
+	else
+		memcpy(&p.in_use_mines, &default_mines, sizeof(default_mines));
 
 	do_send(&p);
 }
@@ -311,6 +339,8 @@ void set_clientId(int c_id)
 
 void process_packet(int c_id, char* packet)
 {
+	//std::cout << "받은 아이디" << c_id << std::endl;
+
 	switch (packet[2]) {
 	case CS_LOGIN: {
 		std::cout << "Recv Login Packet From Client Num : " << c_id << endl;
@@ -342,6 +372,7 @@ void process_packet(int c_id, char* packet)
 		clients[c_id].status.change_top_dir({ 0.f,0.f,0.f });
 		clients[c_id].status.change_bottom_dir({ 0.f,0.f,0.f });
 
+		m.lock();
 		for (auto& pl : clients) {
 			if (pl.stage != ST_READY_ROOM)
 				continue;
@@ -351,6 +382,7 @@ void process_packet(int c_id, char* packet)
 			clients[c_id].send_enter_room_packet(pl.id);
 
 		}
+		m.unlock();
 		break;
 	}
 	case CS_READY: {
@@ -363,13 +395,13 @@ void process_packet(int c_id, char* packet)
 			break;
 		//std::cout << "레디 패킷 전송" << std::endl;
 
+		m.lock();
 		for (auto& pl : clients) {
 			if (pl.stage != ST_READY_ROOM)
 				continue;
 			pl.send_ready_packet(c_id);
 		}
 
-		m.lock();
 		for (int i = 0; i < Room.size(); ++i) {
 			if (Room[i] == -1) {
 				m.unlock();
@@ -421,12 +453,13 @@ void process_packet(int c_id, char* packet)
 		m.lock();
 		Room[clients[c_id].pos_num] = -1;
 		clients[c_id].stage = ST_LOGIN;
-		m.unlock();
+		
 		for (auto& pl : clients) {
 			if (pl.stage != ST_READY_ROOM)
 				continue;
 			pl.send_exit_room_packet(c_id);
 		}
+		m.unlock();
 		break;
 	}
 	case CS_MOVE: {
@@ -440,6 +473,7 @@ void process_packet(int c_id, char* packet)
 		clients[c_id].status.change_top_dir(p->top_dir);
 		clients[c_id].status.change_bottom_dir(p->bottom_dir);
 
+		m.lock();
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
@@ -447,6 +481,7 @@ void process_packet(int c_id, char* packet)
 				continue;
 			pl.send_move_packet(c_id);
 		}
+		m.unlock();
 
 		if (Rank == 1) {
 			clients[c_id].stage = ST_LOGIN;
@@ -474,6 +509,7 @@ void process_packet(int c_id, char* packet)
 		memcpy(&clients[c_id].status.mines_pos, &p->mines_pos, sizeof(p->mines_pos));
 		memcpy(&clients[c_id].status.in_use_mines, &p->in_use_mines, sizeof(p->in_use_mines));
 
+		m.lock();
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
@@ -481,6 +517,7 @@ void process_packet(int c_id, char* packet)
 				continue;
 			pl.send_bullet_packet(c_id);
 		}
+		m.unlock();
 		break;
 	}
 
@@ -499,8 +536,12 @@ void process_packet(int c_id, char* packet)
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
-			if (clients[p->id].status.get_hp() <= 0)
+			if (pl.id == c_id)
+				continue;
+			if (clients[p->id].status.get_hp() <= 0){
 				pl.send_remove_player_packet(p->id);
+				pl.send_bullet_packet(p->id);
+			}
 			else
 				pl.send_hitted_packet(p->id);
 
@@ -545,11 +586,13 @@ void process_packet(int c_id, char* packet)
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
-			if (clients[p->id].status.get_hp() <= 0)
+			if (clients[p->id].status.get_hp() <= 0){
 				pl.send_remove_player_packet(p->id);
+				if(pl.id != p->id)
+					pl.send_bullet_packet(p->id);
+			}
 			else
 				pl.send_hitted_packet(p->id);
-
 		}
 
 		if (clients[p->id].status.get_hp() <= 0) {
@@ -667,8 +710,13 @@ void InitPos()
 	Poses[7].y = 2;
 	Poses[7].z = 282.4;
 
-	
+	for (int i = 0; i < MAX_BULLETS; ++i) {
+		default_bullets[i] = false;
+	}
 
+	for (int i = 0; i < MAX_MINES; ++i) {
+		default_mines[i] = false;
+	}
 }
 
 int main(int argc, char* argv[])

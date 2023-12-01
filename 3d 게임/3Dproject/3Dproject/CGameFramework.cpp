@@ -51,6 +51,9 @@ CGameFrameWork::CGameFrameWork() {
 	}
 	for (int id = 0; id <MAX_USER; ++id) {
 		m_EachSinkTick[id] = 0;
+		for (int i = 0; i < BULLETS; ++i) {
+			m_EachbulletSinkTick[id][i] = 0;
+		}
 	}
 }
 CGameFrameWork::~CGameFrameWork() {
@@ -548,6 +551,9 @@ void CGameFrameWork::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPA
 				}
 				for (int id = 0; id < MAX_USER; ++id) {
 					UserPosStore[id].clear();
+					for (int i = 0; i < BULLETS; ++i) {
+						BulletsPosStore[id][i].clear();
+					}
 				}
 				m_bInterporation = true;
 				OutputDebugStringA("선형보간 ㅇ");
@@ -643,7 +649,7 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 								if (m_pPlayer) {
 									//플레이어 초기화
 									m_pPlayer->m_bActive = true;
-									
+									m_pPlayer->UseMine = 0;
 					
 								}
 								for (auto& m : m_pScene->m_BillBoardList) {
@@ -677,7 +683,12 @@ bool CGameFrameWork::OnProcessingUIMessage(HWND hWnd, UINT nMessageID, WPARAM wP
 										m_pScene->AllMines[id][i].m_bActive = false;
 									}
 								}
-
+								for (int id = 0; id < MAX_USER; ++id) {
+									UserPosStore[id].clear();
+									for (int i = 0; i < BULLETS; ++i) {
+										BulletsPosStore[id][i].clear();
+									}
+								}
 								
 								
 
@@ -960,28 +971,43 @@ void CGameFrameWork::FrameAdvance() {
 			SendPlayerInfoInPlaying();
 
 			SendBulletInfoInPlaying();
-
 			ServerFrameRate = 0;
 		}
 
 	}
 
-
+	OutputDebugStringA("서버 시작 \n");
 	//서버 받는 곳
 	if (m_conneted) {
 		while (true) {
-			int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, sizeof(m_RecvBuffer), 0);
+			int recvLen = ::recv(m_ServerSocket, m_RecvBuffer, BUF_SIZE, 0);
 			if (::WSAGetLastError() == WSAEWOULDBLOCK) {
 				break;
 			}
 			char* ptr = m_RecvBuffer;
-			while (recvLen != 0) {
-				if (0 == now_packet_size) now_packet_size = (MAKEWORD(ptr[0], ptr[1]));
-				if (recvLen + remainLen >= now_packet_size) {
+			if (recvLen < 0)		// 서버에서 오류가 났을경우
+				exit(0);
+			while (recvLen > 0) {
+
+				if (0 == now_packet_size) {
+					if (remainLen == 1) {
+						memcpy(m_RemainBuffer + remainLen, ptr, 1);
+						ptr += 1;
+						remainLen = 2;
+						recvLen -= 1;
+						now_packet_size = MAKEWORD(m_RemainBuffer[0], m_RemainBuffer[1]);
+					}
+					else {
+						if (recvLen >= 2)
+							now_packet_size = (MAKEWORD(ptr[0], ptr[1]));
+					}
+				}
+					
+				if ((recvLen + remainLen >= now_packet_size) && (now_packet_size !=0)) {
 					memcpy(m_RemainBuffer + remainLen, ptr, now_packet_size - remainLen);
 					process_packet(m_RemainBuffer);
-					ptr += now_packet_size - remainLen;
-					recvLen -= now_packet_size - remainLen;
+					ptr += (now_packet_size - remainLen);
+					recvLen -= (now_packet_size - remainLen);
 					now_packet_size = 0;
 					remainLen = 0;
 				}
@@ -993,7 +1019,7 @@ void CGameFrameWork::FrameAdvance() {
 			}
 		}
 	}
-
+	OutputDebugStringA("서버 끝 \n");
 	
 	if (m_GameState == PlayStage)
 	{
@@ -1003,6 +1029,7 @@ void CGameFrameWork::FrameAdvance() {
 	
 		if (m_bInterporation) {
 			//탱크 interporation	
+			m_pScene->ComputeInterpolationBullet(m_EachbulletSinkTick, BulletsPosStore);
 			m_pScene->InterporationTank(m_EachSinkTick, UserPosStore, m_OtherPlayer);
 			
 		}	
@@ -1595,6 +1622,7 @@ int CGameFrameWork::InitSocket() {
 
 	recvLen = 0;
 	memset(m_RecvBuffer, 0, sizeof(m_RecvBuffer));
+	memset(m_RemainBuffer, 0, sizeof(m_RemainBuffer));
 	//retval = connect(m_ServerSocket, (struct sockaddr*)&serveraddr, sizeof(serveraddr));
 	//if (retval) {
 	//	TCHAR temp[256];
@@ -1716,8 +1744,12 @@ void CGameFrameWork::SendBulletInfoInPlaying()
 		}
 		
 	}
+
 	memcpy(m_SendBuffer, reinterpret_cast<char*>(&p), sizeof(CS_BULLET_PACKET));
-	send(m_ServerSocket, m_SendBuffer, p.size, 0); //위치 상태 전송
+	send(m_ServerSocket, m_SendBuffer, p.size, 0);
+	
+
+	 //위치 상태 전송
 
 }
 
@@ -1773,12 +1805,13 @@ void CGameFrameWork::SendHitMInes()
 
 			if (m_pPlayer->m_pMine != NULL) {
 
-				if (m_pPlayer->m_pMine[i]) {
+				if (m_pPlayer->m_pMine[i]->m_bActive) {
 
 					for (int id = 0; id < MAX_USER; ++id) {
+					
 
 						if (m_pScene->CTankObjects[id]->m_bActive) {
-							if (m_pScene->CTankObjects[id]->m_BoundingBox.Intersects(m_pPlayer->m_pMine[i]->m_BoundingBox) || m_pScene->CTankObjects[id]->TopBoundingBox.Intersects(m_pPlayer->m_pMine[i]->m_BoundingBox)) {
+							if (m_pScene->CTankObjects[id]->m_BoundingBox.Intersects(m_pPlayer->m_pMine[i]->m_BoundingBox)) {
 
 								m_pPlayer->m_pMine[i]->m_bActive = false;
 
@@ -1816,7 +1849,7 @@ void CGameFrameWork::SendEXitRoom()
 
 void CGameFrameWork::process_packet(char* packet)								//패킷 처리함수
 {
-	cout << "process_packet called" << endl;
+	//cout << "process_packet called" << endl;
 	switch (packet[2]) {
 	case SC_LOGIN_INFO: {
 		cout << "Recv Login Info Packet Server ! " << endl;
@@ -1967,6 +2000,9 @@ void CGameFrameWork::process_packet(char* packet)								//패킷 처리함수
 				if (!m_bInterporation) { //2frame에 한번식 받으면 굳이 안해줌
 					m_pScene->UpdateOtherPlayer(m_OtherPlayer, p->id);
 					m_EachSinkTick[p->id] = 0;
+					for (int i = 0; i < BULLETS; ++i) {
+						m_EachbulletSinkTick[p->id][i] = 0;
+					}
 				}
 
 
@@ -2031,7 +2067,27 @@ void CGameFrameWork::process_packet(char* packet)								//패킷 처리함수
 
 			}
 			else {
-				m_pScene->RefleshBullet(p);
+
+				if(m_bInterporation){
+						m_pScene->InitInterpolationBullet(p);
+					
+					for (int i = 0; i < BULLETS; ++i) {
+
+						if (p->in_use_bullets[i]) {
+							BulletsPosStore[p->id][i].push_back(p->bullets_pos[i]);
+
+						}
+						else {
+							//총알 유효하지않으면 총알 위치 비워줌 
+							BulletsPosStore[p->id][i].clear();
+						}
+					}
+
+				}
+				else {
+
+					m_pScene->RefleshBullet(p);
+				}
 			}
 		}
 
