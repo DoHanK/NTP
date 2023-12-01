@@ -1010,13 +1010,13 @@ void CGameFrameWork::FrameAdvance() {
 						remainLen = 0;
 					}
 					else {
-						memcpy(m_RemainBuffer, ptr, recvLen);
+						memcpy(m_RemainBuffer+remainLen, ptr, recvLen);
 						remainLen += recvLen;
 						recvLen = 0;
 					}
 				}
 				else {
-					memcpy(m_RemainBuffer, ptr, recvLen);
+					memcpy(m_RemainBuffer+remainLen, ptr, recvLen);
 					remainLen += recvLen;
 					recvLen = 0;
 				}

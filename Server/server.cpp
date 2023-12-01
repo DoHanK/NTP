@@ -164,13 +164,13 @@ public:
 					remainLen = 0;
 				}
 				else {
-					memcpy(remainBuffer, ptr, recvLen);
+					memcpy(remainBuffer+remainLen, ptr, recvLen);
 					remainLen += recvLen;
 					recvLen = 0;
 				}
 			}
 			else {
-				memcpy(remainBuffer, ptr, recvLen);
+				memcpy(remainBuffer+remainLen, ptr, recvLen);
 				remainLen += recvLen;
 				recvLen = 0;
 			}
@@ -428,7 +428,10 @@ void process_packet(int c_id, char* packet)
 				if (pl.stage != ST_READY_ROOM)
 					continue;
 				pl.stage = ST_INGAME;
-				pl.send_game_start_packet();
+			}
+			for (auto& pl : clients) {
+				if(pl.stage == ST_INGAME)
+					pl.send_game_start_packet();
 			}
 			m.unlock();
 

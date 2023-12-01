@@ -3,7 +3,7 @@
 using namespace DirectX;
 
 constexpr int PORT_NUM = 4000;
-constexpr int BUF_SIZE = 1000;
+constexpr int BUF_SIZE = 665535;
 constexpr int NAME_SIZE = 40;
 constexpr int MAX_BULLETS = 30;
 constexpr int MAX_MINES = 2;
