@@ -536,8 +536,6 @@ void process_packet(int c_id, char* packet)
 		for (auto& pl : clients) {
 			if (pl.stage != ST_INGAME)
 				continue;
-			if (pl.id == c_id)
-				continue;
 			if (clients[p->id].status.get_hp() <= 0){
 				pl.send_remove_player_packet(p->id);
 				pl.send_bullet_packet(p->id);
